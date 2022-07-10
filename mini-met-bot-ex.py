@@ -11,7 +11,7 @@ from email import message
 
 client = discord.Client()
 ModeFlag = 0
-TOKEN = "OTg1MjU0NTE1Nzk4MzI3Mjk2.GenRVu.ilH1W4reKpevKW5Z3_UQZ2vb-6mYme0xRqwpQw"
+TOKEN = "TOKEN"
 
 @client.event
 async def on_ready():
