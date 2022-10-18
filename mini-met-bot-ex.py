@@ -24,7 +24,7 @@ client = discord.Client()
 guild_id = "842320961033601044"
 guild = client.get_guild(guild_id)
 ModeFlag = 0
-TOKEN = "OTg1MjU0NTE1Nzk4MzI3Mjk2.GNXk0u.bn_xjXdd-7Df2yk9Sis1--pk83lQUniqxaQSZM"
+TOKEN = "TOKEN"
 mes = ["俺","僕","私","私"]
 me = random.choice(mes)
 
