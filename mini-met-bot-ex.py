@@ -1,7 +1,8 @@
+# さいしょのへんすう
+console_prefix = "[mini-met]"
+
 # import
-print("|")
-print("| I M P O R T I N G   L I B R A R I E S . . . ")
-print("|")
+print(console_prefix,"Importing libraries...")
 from discord.ext import commands
 from email import message
 from time import sleep
@@ -15,78 +16,76 @@ import discord
 import datetime
 import psutil
 
-print("|")
-print("| I M P O R T E D   L I B R A R I E S.")
-print("|")
-
-# え～っと、なんかその、変数
+# 変数
+print(console_prefix,"setting variables...")
 client = discord.Client()
 guild_id = "842320961033601044"
 guild = client.get_guild(guild_id)
-ModeFlag = 0
-TOKEN = "TOKEN"
+bot_token = "ﾄｹﾝ"
+mode_flag = 0
 mes = ["俺","僕","私","私"]
 me = random.choice(mes)
+brocked_words = open("brocked_words.json","r",encoding="utf-8")
+brocked_words = json.load(brocked_words)
+brocked_word_wait_sec = 15
 
-print("|")
-print("| T R Y I N G   M A I N   T A S K ")
-print("|")
+print(console_prefix,"trying main task")
 
 try:
     # 起動時イベント
     @client.event
     async def on_ready():   
         # 変数
-        logChannel = client.get_channel(965269631050862622)
+        log_channel = client.get_channel(965269631050862622)
         now = datetime.datetime.now()
 
         # 起動メッセージ等
-        print("|")
-        print("| M I N I - M E T   I S   R E A D Y")
-        print("|")
-        print("| S T A T U S :")
-        print(f"| M E : {me}")
-        print(f"| T I M E : {now.month}/{now.day} {now.hour}:{now.min}.{now.second}")
-        await logChannel.send(":white_check_mark:  起動しました")
-        await logChannel.send("ステータス :")
-        await logChannel.send(f"- 一人称 : {me}")
-        await logChannel.send(f"- 起動日時 : {now.month}月 {now.day}日 {now.hour}時 {now.minute}分 {now.second}秒")
+        print(console_prefix,"Mini-met is Ready!")
+        print(console_prefix,f"status:\n- at {now.strftime('%Y-%m-%d %H:%M.%S')}\n- discord.py ver: {discord.__version__}")
+        await log_channel.send(":white_check_mark: 子metのメインプログラムが起動しました")
+        await log_channel.send("ステータス : ")
+        await log_channel.send(f"- 一人称 : {me}")
+        await log_channel.send(f"- 起動日時 : {now.month}月 {now.day}日 {now.hour}時 {now.minute}分 {now.second}秒")
+        await log_channel.send(f"discord.py バージョン : {discord.__version__}")
         # その他
         await client.change_presence(activity=discord.Game(name=f"{me}はmetさんの子です。誰が何と言おうとmetさんの子"))
-    #---------------------------ここまで最適化済み
 
     @client.event
     async def on_message(m):
-        global ModeFlag
+        global mode_flag
         rrn = random.randrange(1, 256)  
-        print("|")
-        print("| R E C E I V E D   M E S S A G E")
-        print("|")
+        print(console_prefix,"received message event")
+
+        for brocked_word in brocked_words:
+            if brocked_word in m.content:
+                print(console_prefix,f"detected brocked word: {brocked_word}")
+                print(console_prefix,f"waiting {brocked_word_wait_sec}s...")
+                await m.add_reaction("❗")
+                await asyncio.sleep(brocked_word_wait_sec)
+                print(console_prefix,f"deleting brocked message: {m.content}")
+                nsfw_embed = discord.Embed(title="Brocked words", description=" ", color=0xffd152)
+                nsfw_embed.add_field(name="user: ", value=f"<@{m.author.id}>", inline=False)
+                nsfw_embed.add_field(name="content: ", value=f"{m.content}", inline=False)
+                await client.get_channel(998970821232037991).send(embed=nsfw_embed)
+                await m.delete()
+                print(console_prefix,"deleted")
 
         if m.author.bot:
-            print("|")
-            print("| F R O M   B O T ")
-            print("|")
             return
+
         if m.content == 'm! stop':
-            await m.channel.send('- 停止します -')
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            await m.channel.send(':octagonal_sign: 5秒後に子metのメインプログラムを停止します')
+            print(console_prefix,f"{m.author} issued command: {m.content}")
             sleep(5)
             sys.exit()
 
         if "子met" in m.content or "小met" in m.content:
             await m.channel.send("呼んだ？")
-            print("|")
-            print("| \"met\" I N   M E S S A G E   C O N T E N T")
-            print("|")
+            print(console_prefix,f"received message:) {m.content}")
 
         if m.content == "heyかに" or m.content == "おいに！" or m.content == "heyかにさん！" or m.content == "heyカニさん！" or m.content == "heyかにさん" or m.content == "heyカニさん" or m.content == "かにさん！" or m.content == "カニさん！":
-            await m.channel.send("<@776726560929480707>おい！！！！")
-            print("|")
-            print("| C A L L E D   F O R   C R A B")
-            print("|")
+            await m.channel.send("<@967372572859695184>おい！！！！")
+            print(console_prefix,f"called for Crab55e")
 
         if m.content == "!sc help" or m.content == "!sc ?" or m.content == "!sc ヘルプ" or m.content == "!sc":
             help_embed=discord.Embed()
@@ -96,9 +95,7 @@ try:
             help_embed.add_field(name="サーバーの参加者を確認", value="`!sc list`(<#845185615678144532>でのみ動作)", inline=False)
             help_embed.add_field(name="サーバーのマップのリンクを確認", value="`!sc map`", inline=False)
             await m.channel.send(embed=help_embed)
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            print(console_prefix,f"{m.author} issued command: {m.content}")
             
         if m.content == "!sc status" or m.content == "!sc stats" or m.content == "!sc ステータス":
             cpu_usage = psutil.cpu_percent(interval=1)
@@ -111,98 +108,74 @@ try:
             status_embed.add_field(name="Memory Usage",value=f"{memory_usage.percent}%")
             status_embed.set_footer(text="ver:1.19.2, 情報更新: 2022/8/22")
             await m.channel.send(embed=status_embed)
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            print(console_prefix,f"{m.author} issued command: {m.content}")
 
         if m.content == "!sc map" or m.content == "!sc マップ" or m.content == "!sc 地図":
             map_embed=discord.Embed(title="[マップ！]", url="https://mets-svr.com/map/", description="地形や建築を眺めることが出来ます\n動作してない場合は <#968529044121464843> で報告してください", color=0x00aff4)
             await m.channel.send(embed=map_embed)
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            print(console_prefix,f"{m.author} issued command: {m.content}")
 
         if m.content == "!sc web" or m.content == "!sc webサイト" or m.content == "!sc site" or m.content == "!sc www":
             web_embed=discord.Embed(title="[webサイト]", url="https://mets-svr.com/", description="公式webサイト！、更新しないとなぁ...")
             await m.channel.send(embed=web_embed)
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            print(console_prefix,f"{m.author} issued command: {m.content}")
 
         if m.content == "!sc link" or m.content == "!sc discord" or m.content == "!sc invite" or m.content == "!sc 招待" or m.content == "!sc リンク":
             link_embed=discord.Embed(title="[Discordリンク]", url="https://discord.mets-svr.com/", description="このサーバーのdiscordのリンクです...")
             await m.channel.send(embed=link_embed)
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            print(console_prefix,f"{m.author} issued command: {m.content}")
 
         if m.content == "!sc dakuhore" or m.content == "!sc だくほれ":
             dakuhore_embed=discord.Embed(title="[だくほれ]", url="https://mets-svr.com/dakuhore/", description="カルロスさん。彼氏。かわさん。MEE6。世界史の先生。[詳しく](http://mets-svr.com/だくほれ/)")
             await m.channel.send(embed=dakuhore_embed)
-            print("|")
-            print(f"| I S S U E D   C O M M A N D : \"{m.content}\"")
-            print("|")
+            print(console_prefix,f"{m.author} issued command: {m.content}")
 
         if m.content == 'おはよう' or m.content == 'おはようございます' or m.content == 'おはようございます！' or m.content == 'おはようございます～' or m.content == 'おはよう！' or m.content == 'おはよう～' or m.content == 'ohayou' or m.content == 'oha' or m.content == 'ohayou!'or m.content == 'おはようです'or m.content == 'おはようです～'or m.content == 'おはようです！'or m.content == 'おはようです！！'or m.content == 'おはようです～～':
+            print(console_prefix,f"received morning message: {m.content}, from: {m.author}")
             mrn_pattern = ["おはよう～", "おはようございます！", "おはようございます～"]
             mrn_msg = random.choice(mrn_pattern)
-            sleep(random.uniform(1, 5))
-            print("|")
-            print(f"| S E N D E D   M E S S A G E : \"{mrn_msg}\"")
-            print("|")
+            await asyncio.sleep(random.uniform(1,2))
+            print(console_prefix,f"sent morning message: {mrn_msg}")
             await m.channel.send(mrn_msg)
 
         if "<@" in m.content and ">" in m.content:
-            print("|")
-            print("| R E C E I V E   M E N T I O N   I N   M E S S A G E:",m.content)
-            print("|")
-            mention_embed = discord.Embed(title="mention message log", url=f"https://discord.com/channels/{guild_id}/{m.channel.id}/{m.id}/", description="jump to message", color=0xffd152)
+            print(console_prefix,f"received mention message: {m.content}, from: {m.author}")
+            mention_embed = discord.Embed(title="mention message log", url=f"https://discord.com/channels/{guild_id}/{m.channel.id}/{m.id}/", description=" ", color=0xffd152)
             mention_embed.add_field(name="content: ", value=f"{m.content}", inline=False)
             await client.get_channel(998970570928554095).send(embed=mention_embed)
 
         if rrn == 4:
             await m.channel.send("https://cdn.discordapp.com/attachments/845185615678144532/1009466980929114193/saved.png")
-            print("|")
-            print("| S E N D E D   M E S S A G E : \"保存済みって話する？\"")
-            print("|")
-#        if rrn == 3:
-#            await m.channel.send("https://cdn.discordapp.com/attachments/842320961033601047/1007215551761883198/767118D2-8E86-43A5-88C3-59F99769544C.jpg")
-#            print("|\n| sended message \"貴方頭脳未使用思考...\"\n|")
+            print(console_prefix,"sent random  message: \"保存済みって話する？\"")
 
         if rrn == 2:
             await m.channel.send("Kuruuu2525XD最強")
-            print("|")
-            print("| S E N D E D   M E S S A G E : \"Kuruuu2525XD最強\"")
-            print("|")
+            print(console_prefix,"sent random message: \"Kuruuu2525XD最強\"")
 
         if rrn == 1:
             await m.channel.send("(意味深)")
-            print("|")
-            print("| S E N D E D   M E S S A G E : \"(意味深)\"")
-            print("|")
+            print(console_prefix,"sent random message: \"(意味深)\"")
 
-    client.run(TOKEN)
+    client.run(bot_token)
 except Exception as e:
     now = datetime.datetime.now()
     ErrorLog_URL = "https://discord.com/api/webhooks/1004379654406275072/JlIh2V8CyTfwV3nv_WL5qDIltE_D72hKMmvNlicontOINdlYEoIiJrsmYowqF1M34DtE"
     ErrorLog_Content = {
-        "username": "game8自動宣伝",
+        "username": "mini-met - main",
         "avatar_url": "https://discord.com/assets/7c8f476123d28d103efe381543274c25.png",
         "embeds": [{
             "author": {
                     "name": "| error",
                     "icon_url": "https://cdn.discordapp.com/attachments/804239123895681028/990103681330475048/149.png"
             },
-            "title": "子metが落ちるくらいのエラーが...",
+            "title": "子metのメインプログラムがエラーによってダウンしました",
             "description": f"ERROR :\n{e}",
             "color": 2105893,
             "footer": {
-                "text": f"TIME : {now.month}/{now.day}/ {now.hour}:{now.minute}.{now.second}"
+                "text": f"at : {now.month}/{now.day}/ {now.hour}:{now.minute}.{now.second}"
             }
         }]
     }
     requests.post(ErrorLog_URL,json.dumps(ErrorLog_Content),headers={"Content-Type":"application/json"})
-    print("|")
-    print(f"| E X C E P T I O N : {e}")
-    print("|")
+    print(console_prefix,f"EXCEPTION!!!: {e}")
     sleep(30)
