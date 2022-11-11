@@ -7,6 +7,6 @@
 
 かにさんより
 
-#### contact:
+#### report % issue:
 - [twitter](https://twitter.com/Crab55e/)
 - [Discord](https://discord.gg/nfPnFzyqs7)
