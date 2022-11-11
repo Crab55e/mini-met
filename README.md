@@ -6,4 +6,4 @@
 
 #### contact:
 - [twitter](https://twitter.com/Crab55e/)
-- [Discord](jttps://discord.gg/nfPnFzyqs7)
+- [Discord](https://discord.gg/nfPnFzyqs7)
