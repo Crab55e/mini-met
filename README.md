@@ -4,6 +4,9 @@
 いたずら好きです  
 可愛がってあげてください  
 
+
+かにさんより
+
 #### contact:
 - [twitter](https://twitter.com/Crab55e/)
 - [Discord](https://discord.gg/nfPnFzyqs7)
