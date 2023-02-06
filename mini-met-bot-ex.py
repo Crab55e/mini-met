@@ -284,7 +284,7 @@ class MiniMet(discord.Client):
                     temp_rn = random.randrange(1,6)
                 await m.channel.send(f"{temp_rn}!")
                 return
-            elif command == "今のドル円教えて":
+            elif command == "今のドル円教えろ":
                 async with m.channel.typing():
                     dolyen_rate = "https://www.gaitameonline.com/rateaj/getrate"
                     dolyen_rate = requests.get(dolyen_rate)
