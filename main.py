@@ -47,6 +47,7 @@ import re
 import requests
 import shutil
 import sys
+import typing
 
 from datetime import datetime as dt
 from discord import app_commands
@@ -68,7 +69,7 @@ already_one_time_executed = False
 latest_temp_datas = {
     "actioned_brocked_word_message_id":0,
     "reactioned_message_id":0,
-    "received_dm_user_id":796350579286867988
+    "received_dm_user_id":776726560929480707
 }
 last_actioned_times = {
     "dayone_msg": dt.now()
@@ -92,19 +93,19 @@ admin_ids = [
 
 
 # constant
-BOT_TOKEN = "ﾄｹﾝｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯ"
+BOT_TOKEN = "ﾄｹﾝｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯ"
 METS_SERVER_ID = 842320961033601044
 MINI_MET_ID = 985254515798327296
 AUTH_IMAGE_FONT = ImageFont.truetype("C:/Windows/Fonts/NotoSerifJP-ExtraLight.otf", 100)
 AUTH_IMAGE_RAW = Image.open("storage/images/auth/raw.png")
 LOG_CHANNEL_IDS = {
-    "member_joining_leaving": 998970295350206596,
-    "message_events": 998970570928554095,
-    "member_events": 998970739879329882,
-    "bot_log": 965269631050862622,
-    "server_events": 998970705527984269,
-    "auto_moderations": 998970821232037991,
-    "voice_events": 1015499859945607228
+    "member_joining_leaving": 1074249512605986836,
+    "message_events": 1074249514065596446,
+    "member_events": 1074249515554582548,
+    "bot_log": 1074249516871602227,
+    "server_events": 1074249522215137290,
+    "auto_moderations": 1074249523423105035,
+    "voice_events": 1074249525117603860
 }
 
 # functions
@@ -141,9 +142,10 @@ class MiniMet(discord.Client):
         global already_one_time_executed
         printe(f"{client.user.name} is Ready!!!",label="Event")
         printe(f"at {dt.now().strftime(strftime_arg)}")
-        if already_one_time_executed == False:
-            await tree.sync()
-            already_one_time_executed = True
+#        if already_one_time_executed == False:
+#            await tree.sync()
+#            printe("executed sync.")
+#            already_one_time_executed = True
         await client.change_presence(activity=discord.Game(name=f"/help | mets-svr.com/mini-met | i\'m mini-met!"))
 
     async def on_message(self, m: discord.Message):
@@ -202,9 +204,9 @@ class MiniMet(discord.Client):
                 return
             # talker
             if m.author.id != latest_temp_datas["received_dm_user_id"]:
-                await client.get_channel(1065610631618764821).send(embed=discord.Embed().set_author(name=f"DMの送信先が{m.author}に変更されました",icon_url=m.author.avatar.url))
+                await client.get_channel(1065610631618764821).send(embed=discord.Embed().set_author(name=f"DMの送信先が{m.author}に変更されました",icon_url=m.author.display_avatar.url))
             dm_channel_embed = discord.Embed(description=f"{m.content}")
-            dm_channel_embed.set_author(name=m.author,icon_url=m.author.avatar.url)
+            dm_channel_embed.set_author(name=m.author,icon_url=m.author.display_avatar.url)
             dm_channel_embed.set_footer(text=f"at: {dt.now().strftime(strftime_arg)}, Connecting ID: {m.author.id}")
             await client.get_channel(1065610631618764821).send(embed=dm_channel_embed)
             latest_temp_datas["received_dm_user_id"] = m.author.id
@@ -214,7 +216,7 @@ class MiniMet(discord.Client):
                 if brocked_word in m.content:
                     printe(f"Detected brocked word: {m.content}",label="Bword")
                     brocked_word_embed = discord.Embed(title="ワードフィルタにかかるメッセージを検知しました",url=f"{m.jump_url}",description=f"チャンネル: <#{m.channel.id}>\nユーザー: <@{m.author.id}>")
-                    brocked_word_embed.set_author(icon_url=f"{m.author.avatar.url}",name=f"{m.author}")
+                    brocked_word_embed.set_author(icon_url=f"{m.author.display_avatar.url}",name=f"{m.author}")
                     brocked_word_embed.set_footer(text=f"MId: {m.id} ,ChId: {m.channel.id} ,At: {dt.now().strftime(strftime_arg)}")
                     brocked_word_embed.add_field(name="メッセージ",value=f"{m.content}")
                     await client.get_channel(LOG_CHANNEL_IDS["auto_moderations"]).send(embed=brocked_word_embed)
@@ -225,7 +227,7 @@ class MiniMet(discord.Client):
         if m.author.bot:
             return
 
-        if m.content.startswith("!sc bword",0) and m.channel.id == 1011965676962984047:
+        if m.content.startswith("!sc bword",0) and m.channel.id == 1074148934081073182:
                 # 登録
             if m.content.startswith("!sc bword add ",0):
                 target_message = m.content.replace("!sc bword add ","")
@@ -436,7 +438,7 @@ class MiniMet(discord.Client):
             else:
                 m.channel.send("<@776726560929480707> おーい")
 
-        if re.match("(おはよう|おはようございます|おはようございます！|おはようございます～|おはよう！|おはよう～|ohayou|oha|ohayou!|おはようです|おはようです～|おはようです！|おはようです！！|おはようです～～)",m.content):
+        if re.fullmatch("(おは|oha)(よう|よ|you|yo)?(なす|ナス|茄子|nasu)?(！{1,10}|!{1,10}|～{1,10}|~{1,10})?",m.content):
             printe(f"Received morning message")
             async with m.channel.typing():
                 await asyncio.sleep(random.uniform(1,2))
@@ -450,14 +452,14 @@ class MiniMet(discord.Client):
             if temp_rn == 1:
                 async with m.channel.typing():
                     await asyncio.sleep(random.uniform(1,2))
-            if m.content.endswith("www") or m.content.endswith("ｗｗｗ"):
-                await m.channel.send("wwww")
+                if m.content.endswith("www") or m.content.endswith("ｗｗｗ"):
+                    await m.channel.send("wwww")
 
-            elif m.content.endswith("ww") or m.content.endswith("ｗｗ"):
-                await m.channel.send("ww")
+                elif m.content.endswith("ww") or m.content.endswith("ｗｗ"):
+                    await m.channel.send("ww")
 
-            elif m.content.endswith("w") or m.content.endswith("ｗ"):
-                await m.channel.send("w")
+                elif m.content.endswith("w") or m.content.endswith("ｗ"):
+                    await m.channel.send("w")
 
         if m.content == "がんば":
             await asyncio.sleep(1.5)
@@ -483,16 +485,11 @@ class MiniMet(discord.Client):
                     await asyncio.sleep(random.randrange(1,2))
                 await m.reply("バイアハザードね？",mention_author=False)
 
-        if "hyocei" in m.content:
-            temp_rn = random.randrange(1,3)
-            if temp_rn == 1:
-                async with m.channel.typing():
-                    await asyncio.sleep(random.uniform(1,2))
-                await m.channel.send("Hyocei最強！")
         if m.content == "!sc cae tree.sync()" and m.author.id == 776726560929480707:
             printe("Sync...",label="Inter")
             await tree.sync()
-            await m.channel.send("executed:",{m.content.lstrip("!sc crab-execute ")})
+            temp = m.content.lstrip("!sc cae ")
+            await m.channel.send(f"executed: {temp}")
 
     async def on_invite_create(self, invite: discord.Invite):
         if invite.channel.name:
@@ -500,7 +497,7 @@ class MiniMet(discord.Client):
         elif invite.guild.name:
             printe(f"Invite Created by {invite.inviter} to {invite.guild.name}",label="Event")
         invite_create_embed = discord.Embed(title="Invite Create Event",url=invite.url,description=f"```{invite.url}```")
-        invite_create_embed.set_author(name=invite.inviter,icon_url=invite.inviter.avatar.url)
+        invite_create_embed.set_author(name=invite.inviter,icon_url=invite.inviter.display_avatar.url)
         invite_create_embed.set_footer(text=f"at: {dt.now().strftime(strftime_arg)}")
         invite_create_embed.add_field(name="Inviter",value=invite.inviter.mention)
         invite_create_embed.add_field(name="Max uses",value=str(invite.max_uses))
@@ -513,15 +510,15 @@ class MiniMet(discord.Client):
             return
         printe(f"Reaction added by {user}",label="Event")
         reaction_add_embed = discord.Embed(title="Reaction add event",url=reaction.message.jump_url,description=f"{reaction.emoji} by<@{user.id}> total: **{reaction.count}**")
-        reaction_add_embed.set_author(name=user,icon_url=user.avatar.url)
+        reaction_add_embed.set_author(name=user,icon_url=user.display_avatar.url)
         await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=reaction_add_embed)
 
         if reaction.count == 5 and reaction.message.guild.id == 842320961033601044:
             printe("Received over 5 reactioned message")
             reactioned_5_embed = discord.Embed(title="話題の話題だ！",url=f"{reaction.message.jump_url}",description=f"{reaction.emoji}by <@{user.id}>")
-            reactioned_5_embed.set_author(icon_url=f"{user.avatar.url}",name=f"{user}")
+            reactioned_5_embed.set_author(icon_url=f"{user.display_avatar.url}",name=f"{user}")
             # it's channel is kanb-room
-            await client.get_channel(966297997216448512).send(embed=reactioned_5_embed)
+            await client.get_channel(1074148727616442408).send(embed=reactioned_5_embed)
             return
 
         if (reaction.message.id == latest_temp_datas["actioned_brocked_word_message_id"]) and (reaction.emoji == "❗"):
@@ -534,13 +531,16 @@ class MiniMet(discord.Client):
             return
         printe(f"Reaction removed by {user}",label="Event")
         reaction_add_embed = discord.Embed(title="Reaction remove event",url=reaction.message.jump_url,description=f"{reaction.emoji} by<@{user.id}> total: **{reaction.count}**")
-        reaction_add_embed.set_author(name=user,icon_url=user.avatar.url)
+        reaction_add_embed.set_author(name=user,icon_url=user.display_avatar.url)
         await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=reaction_add_embed)
 
-    async def on_app_command_completion(self, interaction: discord.Interaction, command: discord.app_commands.Command):
+    async def on_app_command_completion(self, interaction: discord.Interaction, command: typing.Union[app_commands.Command,app_commands.ContextMenu]):
         printe(f"{interaction.user} issued command: /{command.qualified_name}")
-        app_command_completion_embed = discord.Embed(title=f"{interaction.user.display_name} issued command: /{command.qualified_name}",description=f"")
-        app_command_completion_embed.set_author(name=interaction.user,icon_url=interaction.user.avatar.url)
+        try:
+            app_command_completion_embed = discord.Embed(title=f"{interaction.user.display_name} issued Command: /{command.qualified_name}",description=f"**Params: **\n{command.parameters}")
+        except AttributeError:
+            app_command_completion_embed = discord.Embed(title=f"{interaction.user.display_name} issued ContextMenu: /{command.qualified_name}",description=f"**Type: **\n{command.type}")
+        app_command_completion_embed.set_author(name=interaction.user,icon_url=interaction.user.display_avatar.url)
         app_command_completion_embed.set_footer(text=f"at: {dt.now().strftime(strftime_arg)}, uid: {interaction.user.id}")
         await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=app_command_completion_embed)
 
@@ -552,58 +552,258 @@ tree = app_commands.CommandTree(client=client)
 
 
 
-@tree.command()
+@tree.command(name="help",description="子metのヘルプを表示")
+@app_commands.guilds(METS_SERVER_ID)
 async def help(interaction: discord.Interaction):
     help_embed=discord.Embed()
     help_embed.add_field(name="これ。", value="</help:1063776235156672632>", inline=False)
     help_embed.add_field(name="サーバーのIPなどを表示", value="</status:1063778904533385306>", inline=False)
     help_embed.add_field(name="サーバーの招待リンクを取得", value="</invite:1063779546949767219>", inline=False)
     help_embed.add_field(name="サーバーのwebリンクを表示", value="</web:1063780119430312017>", inline=False)
-    help_embed.add_field(name="サーバーの参加者を確認", value="`!sc list`(<#845185615678144532>でのみ動作)", inline=False)
+    help_embed.add_field(name="サーバーの参加者を確認", value="`!sc list`(<#1074249466024034334>でのみ動作)", inline=False)
     help_embed.add_field(name="サーバーのマップのリンクを確認", value="</map:1063780759552405544>", inline=False)
     await interaction.response.send_message(embed=help_embed)
 
-@tree.command()
+@tree.command(name="status",description="サーバーのIPなどを表示")
+@app_commands.guilds(METS_SERVER_ID)
 async def status(interaction: discord.Interaction):
     cpu_usage = psutil.cpu_percent(interval=1)
     memory_usage = psutil.virtual_memory()
     status_embed=discord.Embed(title="ステータス", description="IPやバージョン等の情報", color=0x6f5134)
-    status_embed.add_field(name="Java Edition - IP", value="`mets.feathermc.gg`", inline=False)
-    status_embed.add_field(name="Bedrock Edition - IP", value="`hot.ssnetwork.io`", inline=False)
-    status_embed.add_field(name="Bedrock Edition - Port", value="`48718`")
+    status_embed.add_field(name="Java Edition - IP", value="`mets.sabafly.net`", inline=False)
+    status_embed.add_field(name="Bedrock Edition - IP", value="`mets.sabafly.net`", inline=False)
+    status_embed.add_field(name="Bedrock Edition - Port", value="`19132`")
     status_embed.add_field(name="CPU Usage",value=f"{cpu_usage}%", inline=False)
     status_embed.add_field(name="Memory Usage",value=f"{memory_usage.percent}%")
     status_embed.set_footer(text="ver:1.19.3, 情報更新: 2023/01/27")
     await interaction.response.send_message(embed=status_embed)
 
-@tree.command()
+@tree.command(name="invite",description="サーバーの招待リンクを取得")
+@app_commands.guilds(METS_SERVER_ID)
 async def invite(interaction: discord.Interaction):
     invite_embed = discord.Embed(title="招待リンク",description="サーバーの招待リンクです\nいろんなところ共有してください！\n**```https://discord.mets-svr.com```**",color=0x22ff22)
     view = discord.ui.View().add_item(discord.ui.Button(label='招待リンク', url='https://discord.mets-svr.com/'))
     await interaction.response.send_message(view=view,embed=invite_embed)
 
-@tree.command()
+@tree.command(name="web",description="サーバーのwebリンクを表示")
+@app_commands.guilds(METS_SERVER_ID)
 async def web(interaction: discord.Interaction):
     web_embed = discord.Embed(title="webサイト",description="サーバーの公式webサイトです\n更新がめんどくてめんどくて...\n**```https://mets-svr.com```**",color=0x22ff22)
     view = discord.ui.View().add_item(discord.ui.Button(label='webサイト', url='https://mets-svr.com/'))
     await interaction.response.send_message(view=view,embed=web_embed)
 
-@tree.command()
+@tree.command(name="map",description="サーバーのマップのリンクを確認")
+@app_commands.guilds(METS_SERVER_ID)
 async def map(interaction: discord.Interaction):
     web_embed = discord.Embed(title="マップ",description="サーバーのマップです\n空からワールドを眺めたりできます\n動作していないこともあります...\n**```https://mets-svr.com/map```**",color=0x22ff22)
     view = discord.ui.View().add_item(discord.ui.Button(label='マップ', url='https://mets-svr.com/map'))
     await interaction.response.send_message(view=view,embed=web_embed)
 
-@tree.command()
+# FIXME: なんか、なんだadd-todoのコマンドが捜査してないから直す
+@tree.command(name="add-todo",description="開発者用-追加予定の要素をメモする")
+@app_commands.describe(
+    label="バグ、改善案、新機能",
+    title="タイトル",
+    description="説明"
+)
+@app_commands.guilds(METS_SERVER_ID)
+async def add_todo(interaction: discord.Interaction, label: str, title: str, description: str):
+    embed = discord.Embed(title=f"{label}: {title}",description=description)
+    embed.set_author(icon_url=interaction.user.display_avatar.url)
+    embed.set_footer(text=f"uid: {interaction.user.id}, at: {dt.now().strftime(strftime_arg)}")
+    if label == "バグ" or label == "改善案" or label == "新機能":
+        match label:
+            case "バグ": embed.color = 0xff0000
+            case "改善案": embed.color = 0x00ff00
+            case "新機能": embed.color = 0x0000ff
+    await client.get_channel(1072469158530396190).send(embed=embed)
+    await interaction.response.send_message(content=f"**{title}**をTODOに追加しました",ephemeral=True)
+
+@tree.command(name="dayone",description="こめたんに共感してもらう")
 async def dayone(interaction: discord.Interaction):
-    printe(f"issued /dayone command by @{interaction.user}")
     await interaction.response.send_message(content="\:D",ephemeral=True)
     event_channel_id = interaction.channel.id
     async with interaction.channel.typing():
         await asyncio.sleep(random.uniform(1,2))
     await client.get_channel(event_channel_id).send("だよね！！！")
 
-@tree.context_menu()
+@tree.command(name="group-categorize",description="選んだ値をランダムにグループ分けする"
+)
+@app_commands.describe(
+    users="スペースで値を区切る",
+    members="何人ずつにメンバーを分けるか"
+)
+async def group_categorize(interaction: discord.Interaction, users: str, members: int):
+    if not (" " in users):
+        await interaction.response.send_message("値が1つしかないか、またはスペースによって区切られていません",ephemeral=True)
+        return
+    users = users.split(" ")
+    if len(users) < members:
+        await interaction.response.send_message(f"ユーザー数に対するグループのメンバーが多すぎます\n**{len(users)}**人 | **{members}**メンバー",ephemeral=True)
+        return
+    result = {}
+    while 0 >= len(users):
+        i = i + 1
+        result[f"group_{i}"] = []
+        for j in range(members):
+            user = random.choice(users)
+            result[f"group_{i}"].append(user)
+            users.remove(user)
+    result = json.dumps(result,indent=4)
+    await interaction.response.send_message(result)
+
+@tree.command(name="purogura-picker",description="プログラさん語録を検索、またはランダムに出力します")
+@app_commands.guilds(METS_SERVER_ID)
+@app_commands.describe(
+    search_query="検索ワード"
+)
+async def purogura_picker(interaction: discord.Interaction, search_query: typing.Optional[str]):
+    interaction.response.send_message(f"sq {search_query}")
+
+@tree.command(name="temp-role",description="時間を指定して一定期間だけ指定のロールを付与できます")
+@app_commands.describe(
+    target="ロールを付与するユーザー",
+    role="付与するロール",
+    duration="付与する時間(1s = 1秒, 1m = 1分, 1h = 1時間, 1d = 1日, 1w = 1週間 \",\"で値を区切ります。例: 1w,2d,3h,4m,5s)",
+    notify_to_dm="終了時にDMへ通知する先のメンバー"
+)
+@app_commands.guild_only()
+@app_commands.checks.has_permissions(administrator=True)
+async def temp_role(
+    interaction: discord.Interaction,
+    target: discord.Member,
+    role: discord.Role,
+    duration: str,
+    notify_to_dm: typing.Optional[discord.Member] = None
+):
+    durations = duration.split(",")
+    wait_duration = 0
+    for duration in durations:
+        try:
+            if duration.endswith("w"):
+                duration = duration.rstrip("w")
+                duration = int(duration) * 604800
+            elif duration.endswith("d"):
+                duration = duration.rstrip("d")
+                duration = int(duration) * 86400
+            elif duration.endswith("h"):
+                duration = duration.rstrip("h")
+                duration = int(duration) * 3600
+            elif duration.endswith("m"):
+                duration = duration.rstrip("m")
+                duration = int(duration) * 60
+            elif duration.endswith("s"):
+                duration = duration.rstrip("s")
+                duration = int(duration)
+            else:
+                await interaction.response.send_message("引数、`duration`の指定が間違っています",ephemeral=True)
+                return
+            wait_duration += duration
+        except TypeError:
+            await interaction.response.send_message("引数、`duration`の指定が間違っています",ephemeral=True)
+            return
+    await target.add_roles(role,reason="temp-role feature")
+    embed = discord.Embed(description=f"{target.mention}に{role.mention}を付与しました\nこのロールは{seconds_to_string(wait_duration,'**%w**週間 **%d**日 **%h**時間 **%m**分 **%s**秒後')}に剥奪されます")
+    embed.set_author(icon_url=target.display_avatar.url,name=target)
+    await interaction.response.send_message(embed=embed)
+    await asyncio.sleep(wait_duration)
+    if notify_to_dm is not None:
+        notify_embed = discord.Embed(title="temp-role機能の効果が終了しました",description=f"付与: {interaction.user.mention}\n付与先: {target.mention}")
+        notify_embed.set_author(name=interaction.user.name,icon_url=interaction.user.display_avatar.url)
+        notify_embed.set_footer(text="このメッセージはtemp-role機能を使用したユーザーによって通知されました")
+        await notify_to_dm.send(embed=notify_embed)
+    await target.remove_roles(role,reason="temp-role feature")
+
+class Feedback(discord.ui.Modal, title="フィードバック"):
+
+    feedback = discord.ui.TextInput(
+        label="フィードバックの内容",
+        style=discord.TextStyle.long,
+        placeholder="メッセージを入力してください",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="新フィードバック！",description=f"{self.feedback.value}")
+        embed.set_author(name=interaction.user,icon_url=interaction.user.display_avatar.url)
+        embed.set_footer(text=f"uid: {interaction.user.id}, at {dt.now().strftime(strftime_arg)}")
+        await client.get_channel(1072420523390287962).send(embed=embed)
+        await interaction.response.send_message("フィードバックをありがとうございました。", ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title="feedback内部エラー",description=error,color=0xff0000)
+        await client.get_channel(1072420523390287962).send(embed=embed)
+        await interaction.response.send_message(f"内部エラーにより処理に失敗しました", ephemeral=True)
+
+@tree.command(name="feedback",description="子metに対する改善案やバグ報告などのフィードバックを送信します")
+async def feedback(interaction: discord.Interaction):
+    await interaction.response.send_modal(Feedback())
+
+# TODO: 埋め込み作成コマンドを実装する
+class GenerateEmbed(discord.ui.Modal, title="埋め込み作成"):
+    title = discord.ui.TextInput(
+        label="title",
+        style=discord.TextStyle.short,
+        max_length=256,
+        required=False,
+        placeholder="タイトルを入力してください"
+    )
+    description = discord.ui.TextInput(
+        label="description",
+        style=discord.TextStyle.long,
+        max_length=4096,
+        required=False,
+        placeholder="説明欄を入力してください"
+    )
+    fields = discord.ui.TextInput(
+        label="fields",
+        style=discord.TextStyle.long,
+        required=False,
+        placeholder='JSON形式で入力します。例: [{"name":"好きな食べ物","value":"カステラ"},{"name":"好きな動物","value":"かに"}]'
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        await interaction.response.send_message("on_submit", ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title="generate_embed内部エラー",description=error,color=0xff0000)
+        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(embed=embed)
+        await interaction.response.send_message(f"内部エラーにより処理に失敗しました", ephemeral=True)
+
+@tree.command(name="generate-embed",description="埋め込みメッセージを送信します")
+@app_commands.describe(
+    color="16進数のRGBカラーコードでラインの色を指定します",
+    url="title要素のリンク先",
+    author="author属性のアイコン画像",
+    image="image属性の画像",
+    thumbnail="thumbnail要素の画像"
+)
+async def generate_embed(
+    interaction: discord.Interaction,
+    color: typing.Optional[str] = None,
+    url: typing.Optional[str] = None,
+    author: typing.Optional[discord.Attachment] = None,
+    image: typing.Optional[discord.Attachment] = None,
+    thumbnail: typing.Optional[discord.Attachment] = None
+):
+    if (color is not None) and (len(color) != 6):
+        await interaction.response.send_message("colorの長さが正しくありません",ephemeral=True)
+        return
+    elif (color is not None) and (len(color) == 6):
+        try:
+            color = hex(int(color, 16))
+        except ValueError:
+            await interaction.response.send_message("colorの値が正しくありません",ephemeral=True)
+            return
+    if (url is not None) and (not re.fullmatch("https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+",url)):
+        await interaction.response.send_message("urlの指定が正しくありません",ephemeral=True)
+        return
+
+    await interaction.response.send_modal(GenerateEmbed())
+
+
+@tree.context_menu(name="だよね！！！")
 async def dayone_msg(interaction: discord.Interaction, message: discord.Message):
     if last_actioned_times["dayone_msg"].second == dt.now().second:
         return
@@ -615,5 +815,44 @@ async def dayone_msg(interaction: discord.Interaction, message: discord.Message)
         await message.reply("だよね！！！！",mention_author=False)
     last_actioned_times["dayone_msg"] = dt.now()
     await interaction.response.send_message(content="\:D",ephemeral=True)
+
+class ChangeExt(discord.ui.Modal, title="拡張子変更"):
+    title = discord.ui.TextInput(
+        label="拡張子",
+        style=discord.TextStyle.short,
+        required=True,
+        placeholder="変更後の拡張子を指定してください"
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        await interaction.response.send_message("on_submit", ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title="generate_embed内部エラー",description=error,color=0xff0000)
+        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(embed=embed)
+        await interaction.response.send_message(f"内部エラーにより処理に失敗しました", ephemeral=True)
+@tree.context_menu(name="ぎふぃふぃけーと")
+async def gifificate(interaction: discord.Interaction, message: discord.Message):
+#    if prosessing_change_ext == True:
+#        interaction.response.send_message("別の処理を行っています、数秒後にもう一度お試しください",ephemeral=True)
+#        return
+#    else:
+#        global change_ext_message
+#        global prosessing_change_ext
+#        change_ext_message = message
+#        prosessing_change_ext = True
+    try:
+        printe(f"Gififing {message.attachments[0].filename} and otherfiles...")
+    except IndexError:
+        await interaction.response.send_message("該当のメッセージには送付ファイルが含まれていません",ephemeral=True)
+        return
+    result_files = []
+    for attachment in message.attachments:
+        path = os.PathLike
+        attachment.save(f"storage/images/gifificated/{message.id}-by-{message.author.id}.png")
+        result_file = await attachment.to_file(filename=f"gifificated-{attachment.filename}.gif")
+        result_files.append(result_file)
+    await interaction.response.send_message(content="ぎっふぃっふぃ...",files=result_files)
 
 client.run(token=BOT_TOKEN)
