@@ -53,6 +53,7 @@ from datetime import datetime as dt
 from discord import app_commands
 from PIL import Image, ImageDraw, ImageFont
 from time import sleep
+from googletrans import Translator
 
 
 
@@ -69,7 +70,8 @@ already_one_time_executed = False
 latest_temp_datas = {
     "actioned_brocked_word_message_id":0,
     "reactioned_message_id":0,
-    "received_dm_user_id":776726560929480707
+    "received_dm_user_id":776726560929480707,
+    "openable_discord_message_link":0
 }
 last_actioned_times = {
     "dayone_msg": dt.now()
@@ -93,21 +95,22 @@ admin_ids = [
 
 
 # constant
-BOT_TOKEN = "ﾄｹﾝｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯ"
+BOT_TOKEN = "ﾄｹﾝｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯ"
 METS_SERVER_ID = 842320961033601044
 MINI_MET_ID = 985254515798327296
 AUTH_IMAGE_FONT = ImageFont.truetype("C:/Windows/Fonts/NotoSerifJP-ExtraLight.otf", 100)
 AUTH_IMAGE_RAW = Image.open("storage/images/auth/raw.png")
-LOG_CHANNEL_IDS = {
+CHANNEL_IDS = {
     "member_joining_leaving": 1074249512605986836,
     "message_events": 1074249514065596446,
     "member_events": 1074249515554582548,
     "bot_log": 1074249516871602227,
     "server_events": 1074249522215137290,
     "auto_moderations": 1074249523423105035,
-    "voice_events": 1074249525117603860
+    "voice_events": 1074249525117603860,
+    "report_datas": 1017828972240838745
 }
-
+HTTP_AUTHORIZATION_HEADERS = {"Authorization":f"Bot {BOT_TOKEN}"}
 # functions
 def seconds_to_string(seconds: int = 0, outstr: str = "%wweeks, %ddays %h:%m.%s"):
     weeks = 0
@@ -142,10 +145,10 @@ class MiniMet(discord.Client):
         global already_one_time_executed
         printe(f"{client.user.name} is Ready!!!",label="Event")
         printe(f"at {dt.now().strftime(strftime_arg)}")
-#        if already_one_time_executed == False:
-#            await tree.sync()
-#            printe("executed sync.")
-#            already_one_time_executed = True
+        # if already_one_time_executed == False:
+        #     await tree.sync()
+        #     printe("executed sync.")
+        #     already_one_time_executed = True
         await client.change_presence(activity=discord.Game(name=f"/help | mets-svr.com/mini-met | i\'m mini-met!"))
 
     async def on_message(self, m: discord.Message):
@@ -179,9 +182,9 @@ class MiniMet(discord.Client):
                         bword_temp_w.close()
                         bword_appended_embed = discord.Embed(title=f"\"{target_message}\" をワードフィルターに追加しました").set_footer(text="DM Channel Commands")
                         await m.author.send(embed=bword_appended_embed)
-                        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(embed=bword_appended_embed)
+                        await client.get_channel(CHANNEL_IDS["bot_log"]).send(embed=bword_appended_embed)
                     except Exception as e:
-                        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(f"Appending blocked word Exception in DMChannel:\n{e}")
+                        await client.get_channel(CHANNEL_IDS["bot_log"]).send(f"Appending blocked word Exception in DMChannel:\n{e}")
                     return
 
                 if m.content.startswith("!sc bword remove "):
@@ -196,9 +199,9 @@ class MiniMet(discord.Client):
                         bword_temp_w.close()
                         bword_removed_embed = discord.Embed(title=f"\"{target_message}\" をワードフィルターから削除しました").set_footer(text="DM Channel Commands")
                         await m.author.send(embed=bword_removed_embed)
-                        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(embed=bword_removed_embed)
+                        await client.get_channel(CHANNEL_IDS["bot_log"]).send(embed=bword_removed_embed)
                     except Exception as e:
-                        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(f"Removing blocked word Exception in DMChannel:\n{e}")
+                        await client.get_channel(CHANNEL_IDS["bot_log"]).send(f"Removing blocked word Exception in DMChannel:\n{e}")
                     return
 
                 return
@@ -219,7 +222,7 @@ class MiniMet(discord.Client):
                     brocked_word_embed.set_author(icon_url=f"{m.author.display_avatar.url}",name=f"{m.author}")
                     brocked_word_embed.set_footer(text=f"MId: {m.id} ,ChId: {m.channel.id} ,At: {dt.now().strftime(strftime_arg)}")
                     brocked_word_embed.add_field(name="メッセージ",value=f"{m.content}")
-                    await client.get_channel(LOG_CHANNEL_IDS["auto_moderations"]).send(embed=brocked_word_embed)
+                    await client.get_channel(CHANNEL_IDS["auto_moderations"]).send(embed=brocked_word_embed)
                     await m.add_reaction("❗")
                     latest_temp_datas["actioned_brocked_word_message_id"] = m.id
                     await asyncio.sleep(5)
@@ -227,6 +230,8 @@ class MiniMet(discord.Client):
         if m.author.bot:
             return
 
+        if re.match("(かに|kani|\:crab\:|crab)",m.content):
+            await client.get_user(776726560929480707).send(embed=discord.Embed(title="かにだ",url=m.jump_url,description=m.content).set_author(icon_url=m.author.display_avatar.url,name=m.author.display_name))
         if m.content.startswith("!sc bword",0) and m.channel.id == 1074148934081073182:
                 # 登録
             if m.content.startswith("!sc bword add ",0):
@@ -270,7 +275,12 @@ class MiniMet(discord.Client):
             printe("Received mention message",label="MentionLog")
             mention_embed = discord.Embed(title="mention message log", url=m.jump_url, description=" ", color=0xffd152)
             mention_embed.add_field(name="content: ", value=f"{m.content}", inline=False)
-            await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=mention_embed)
+            await client.get_channel(CHANNEL_IDS["message_events"]).send(embed=mention_embed)
+
+        if re.match("https://(canary\.)?discord\.com/channels/\d*/\d*/\d*/?",m.content):
+            printe("Messsage link in message content")
+            latest_temp_datas["openable_discord_message_link"] = m.id
+            await m.add_reaction("🔗")
 
         # メンションコマンド
         if m.content.startswith("<@985254515798327296>"):
@@ -280,12 +290,10 @@ class MiniMet(discord.Client):
                 command = m.content.lstrip("<@985254515798327296>")
             printe(f"received Mention Command: {command}",label="MentionCmd")
             await asyncio.sleep(.2)
-
             if command == "サイコロ振って":
                 async with m.channel.typing():
                     temp_rn = random.randrange(1,6)
                 await m.channel.send(f"{temp_rn}!")
-                return
             elif command == "今のドル円教えて":
                 async with m.channel.typing():
                     dolyen_rate = "https://www.gaitameonline.com/rateaj/getrate"
@@ -294,120 +302,147 @@ class MiniMet(discord.Client):
                     dolyen_rate = dolyen_rate["quotes"][20]
                     dolyen_rate_embed = discord.Embed(title=f"{dolyen_rate['currencyPairCode']}",description=f"High: {dolyen_rate['high']}\nLow: {dolyen_rate['low']}")
                 await m.channel.send(embed=dolyen_rate_embed)
-                return
-            async with m.channel.typing():
-                command = command.lstrip("明日の")
-                command = command.rstrip("の天気教えて")
-                if command.endswith("地方"):
-                    command = command.rstrip("地方")
-                if command.endswith("県"):
-                    command = command.rstrip("県")
-                if command.endswith("都"):
-                    command = command.rstrip("都")
-                if command.endswith("府"):
-                    command = command.rstrip("府")
-                match command:
-                    case "宗谷": areacode = "011000"
-                    case "上川": areacode = "012000"
-                    case "留萌": areacode = "012000"
-                    case "網走": areacode = "013000"
-                    case "北見": areacode = "013000"
-                    case "紋別": areacode = "013000"
-                    case "十勝": areacode = "014030"
-                    case "釧路": areacode = "014100"
-                    case "根室": areacode = "014100"
-                    case "胆振": areacode = "015000"
-                    case "日高": areacode = "015000"
-                    case "石狩": areacode = "016000"
-                    case "空知": areacode = "016000"
-                    case "後志": areacode = "016000"
-                    case "渡島": areacode = "017000"
-                    case "檜山": areacode = "017000"
-                    case "青森": areacode = "020000"
-                    case "岩手": areacode = "030000"
-                    case "宮城": areacode = "040000"
-                    case "秋田": areacode = "050000"
-                    case "山形": areacode = "060000"
-                    case "福島": areacode = "070000"
-                    case "茨城": areacode = "080000"
-                    case "栃木": areacode = "090000"
-                    case "群馬": areacode = "100000"
-                    case "埼玉": areacode = "110000"
-                    case "千葉": areacode = "120000"
-                    case "東京": areacode = "130000"
-                    case "神奈川": areacode = "140000"
-                    case "山梨": areacode = "190000"
-                    case "長野": areacode = "200000"
-                    case "岐阜": areacode = "210000"
-                    case "静岡": areacode = "220000"
-                    case "愛知": areacode = "230000"
-                    case "三重": areacode = "240000"
-                    case "新潟": areacode = "150000"
-                    case "富山": areacode = "160000"
-                    case "石川": areacode = "170000"
-                    case "福井": areacode = "180000"
-                    case "滋賀": areacode = "250000"
-                    case "京都": areacode = "260000"
-                    case "大阪": areacode = "270000"
-                    case "兵庫": areacode = "280000"
-                    case "奈良": areacode = "290000"
-                    case "和歌山": areacode = "300000"
-                    case "鳥取": areacode = "310000"
-                    case "島根": areacode = "320000"
-                    case "岡山": areacode = "330000"
-                    case "広島": areacode = "340000"
-                    case "徳島": areacode = "360000"
-                    case "香川": areacode = "370000"
-                    case "愛媛": areacode = "380000"
-                    case "高知": areacode = "390000"
-                    case "山口": areacode = "350000"
-                    case "福岡": areacode = "400000"
-                    case "佐賀": areacode = "410000"
-                    case "長崎": areacode = "420000"
-                    case "熊本": areacode = "430000"
-                    case "大分": areacode = "440000"
-                    case "宮崎": areacode = "450000"
-                    case "奄美": areacode = "460040"
-                    case "鹿児島": areacode = "460100"
-                    case "沖縄本島": areacode = "471000"
-                    case "大東島": areacode = "472000"
-                    case "宮古島": areacode = "473000"
-                    case "八重山": areacode = "474000"
-                    case _: areacode = "Not Found"
-                if areacode == "Not Found":
-                    await m.channel.send("しらん")
-                    return
-                try:
-                    jma_data = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{areacode}.json"
-                    jma_data = requests.get(jma_data).json()
-                    jma_data = jma_data[0]
-                except Exception as e:
-                    printe(f"Exception at get weather data: {e}",mode="error")
-                    await m.channel.send(embed=discord.Embed(color=0xff0000,title="内部エラーによりデータの取得に失敗しました"))
-                    await client.get_channel(965269631050862622).send(content=f"Get Weather Exception:\n{e}")
-                    return
-                weather_info_embed_title = discord.Embed(color=0xcccccc,title=f"天気by気象庁",url="https://www.jma.go.jp/jma/",description=f'{jma_data["publishingOffice"]} | {jma_data["reportDatetime"]}')
+            elif command.startswith("明日の") and command.endswith("の天気教えて"):
+                async with m.channel.typing():
+                    command = command.lstrip("明日の")
+                    command = command.rstrip("の天気教えて")
+                    if command.endswith("地方"):
+                        command = command.rstrip("地方")
+                    if command.endswith("県"):
+                        command = command.rstrip("県")
+                    if command.endswith("都"):
+                        command = command.rstrip("都")
+                    if command.endswith("府"):
+                        command = command.rstrip("府")
+                    match command:
+                        case "宗谷": areacode = "011000"
+                        case "上川": areacode = "012000"
+                        case "留萌": areacode = "012000"
+                        case "網走": areacode = "013000"
+                        case "北見": areacode = "013000"
+                        case "紋別": areacode = "013000"
+                        case "十勝": areacode = "014030"
+                        case "釧路": areacode = "014100"
+                        case "根室": areacode = "014100"
+                        case "胆振": areacode = "015000"
+                        case "日高": areacode = "015000"
+                        case "石狩": areacode = "016000"
+                        case "空知": areacode = "016000"
+                        case "後志": areacode = "016000"
+                        case "渡島": areacode = "017000"
+                        case "檜山": areacode = "017000"
+                        case "青森": areacode = "020000"
+                        case "岩手": areacode = "030000"
+                        case "宮城": areacode = "040000"
+                        case "秋田": areacode = "050000"
+                        case "山形": areacode = "060000"
+                        case "福島": areacode = "070000"
+                        case "茨城": areacode = "080000"
+                        case "栃木": areacode = "090000"
+                        case "群馬": areacode = "100000"
+                        case "埼玉": areacode = "110000"
+                        case "千葉": areacode = "120000"
+                        case "東京": areacode = "130000"
+                        case "神奈川": areacode = "140000"
+                        case "山梨": areacode = "190000"
+                        case "長野": areacode = "200000"
+                        case "岐阜": areacode = "210000"
+                        case "静岡": areacode = "220000"
+                        case "愛知": areacode = "230000"
+                        case "三重": areacode = "240000"
+                        case "新潟": areacode = "150000"
+                        case "富山": areacode = "160000"
+                        case "石川": areacode = "170000"
+                        case "福井": areacode = "180000"
+                        case "滋賀": areacode = "250000"
+                        case "京都": areacode = "260000"
+                        case "大阪": areacode = "270000"
+                        case "兵庫": areacode = "280000"
+                        case "奈良": areacode = "290000"
+                        case "和歌山": areacode = "300000"
+                        case "鳥取": areacode = "310000"
+                        case "島根": areacode = "320000"
+                        case "岡山": areacode = "330000"
+                        case "広島": areacode = "340000"
+                        case "徳島": areacode = "360000"
+                        case "香川": areacode = "370000"
+                        case "愛媛": areacode = "380000"
+                        case "高知": areacode = "390000"
+                        case "山口": areacode = "350000"
+                        case "福岡": areacode = "400000"
+                        case "佐賀": areacode = "410000"
+                        case "長崎": areacode = "420000"
+                        case "熊本": areacode = "430000"
+                        case "大分": areacode = "440000"
+                        case "宮崎": areacode = "450000"
+                        case "奄美": areacode = "460040"
+                        case "鹿児島": areacode = "460100"
+                        case "沖縄本島": areacode = "471000"
+                        case "大東島": areacode = "472000"
+                        case "宮古島": areacode = "473000"
+                        case "八重山": areacode = "474000"
+                        case _: areacode = "Not Found"
+                    if areacode == "Not Found":
+                        await m.channel.send("しらん")
+                        return
+                    try:
+                        jma_data = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{areacode}.json"
+                        jma_data = requests.get(jma_data).json()
+                        jma_data = jma_data[0]
+                    except Exception as e:
+                        printe(f"Exception at get weather data: {e}",mode="error")
+                        await m.channel.send(embed=discord.Embed(color=0xff0000,title="内部エラーによりデータの取得に失敗しました"))
+                        await client.get_channel(965269631050862622).send(content=f"Get Weather Exception:\n{e}")
+                        return
+                    weather_info_embed_title = discord.Embed(
+                        color=0xcccccc,title=f"天気by気象庁",
+                        url="https://www.jma.go.jp/jma/",
+                        description=f'{jma_data["publishingOffice"]} | {jma_data["reportDatetime"]}'
+)
+                    weather_info_embed_rainluck = discord.Embed(
+                        color=0x88ff88,
+                        title=f"降水確率",
+                        description=f'`{jma_data["timeSeries"][1]["timeDefines"][1]}`'
+)
+                    weather_info_embed_weather = discord.Embed(
+                        color=0xff8888,
+                        title=f"天気",
+                        description=f'`{jma_data["timeSeries"][0]["timeDefines"][1]}`'
+)
+                    weather_info_embed_temp = discord.Embed(
+                        color=0x8888ff,title=f"気温",
+                        description=f'`{jma_data["timeSeries"][1]["timeDefines"][0]}` ～ `{jma_data["timeSeries"][1]["timeDefines"][1]}`'
+)
+                    try:
+                        for weather in jma_data["timeSeries"][0]["areas"]:
+                            weather_info_embed_weather.add_field(
+                                inline=False,
+                                name=f'エリア: {weather["area"]["name"]}',
+                                value=f'**天気**: {weather["weathers"][1].replace("　","")}\n**風**: {weather["winds"][1].replace("　","")}\n**波**: {weather["waves"][1].replace("　","")}'
+)
+                    except Exception as e:
+                        printe(f"Exception! It\'s keyerror of \"waves\"?\n{e}","error")
+                        for weather in jma_data["timeSeries"][0]["areas"]:
+                            weather_info_embed_weather.add_field(
+                                inline=False,
+                                name=f'エリア: {weather["area"]["name"]}',
+                                value=f'**天気**: {weather["weathers"][1].replace("　","")}\n**風**: {weather["winds"][1].replace("　","")}'
+)
 
-                weather_info_embed_weather = discord.Embed(color=0xff8888,title=f"天気",description=f'`{jma_data["timeSeries"][0]["timeDefines"][1]}`')
-                try:
-                    for weather in jma_data["timeSeries"][0]["areas"]:
-                        weather_info_embed_weather.add_field(inline=False,name=f'エリア: {weather["area"]["name"]}',value=f'**天気**: {weather["weathers"][1].replace("　","")}\n**風**: {weather["winds"][1].replace("　","")}\n**波**: {weather["waves"][1].replace("　","")}')
-                except Exception as e:
-                    printe(f"Exception! It\'s keyerror of \"waves\"?\n{e}","error")
-                    for weather in jma_data["timeSeries"][0]["areas"]:
-                        weather_info_embed_weather.add_field(inline=False,name=f'エリア: {weather["area"]["name"]}',value=f'**天気**: {weather["weathers"][1].replace("　","")}\n**風**: {weather["winds"][1].replace("　","")}')
-
-                        weather_info_embed_rainluck = discord.Embed(color=0x88ff88,title=f"降水確率",description=f'`{jma_data["timeSeries"][1]["timeDefines"][1]}`')
                         for rainluck in jma_data["timeSeries"][1]["areas"]:
-                            weather_info_embed_rainluck.add_field(name=f'エリア: {rainluck["area"]["name"]}',value=f'{rainluck["pops"][1]}%')
+                            weather_info_embed_rainluck.add_field(
+                                name=f'エリア: {rainluck["area"]["name"]}',
+                                value=f'{rainluck["pops"][1]}%'
+)
 
-                        weather_info_embed_temp = discord.Embed(color=0x8888ff,title=f"気温",description=f'`{jma_data["timeSeries"][1]["timeDefines"][0]}` ～ `{jma_data["timeSeries"][1]["timeDefines"][1]}`')
                         for area in jma_data["timeSeries"][2]["areas"]:
-                            weather_info_embed_temp.add_field(name=f'エリア: {area["area"]["name"]}',value=f'最低気温: {area["temps"][0]}\n最高気温: {area["temps"][1]}')
-            await m.channel.send(embeds=[weather_info_embed_title,weather_info_embed_weather,weather_info_embed_rainluck,weather_info_embed_temp])
-            return
+                            weather_info_embed_temp.add_field(
+                                name=f'エリア: {area["area"]["name"]}',
+                                value=f'最低気温: {area["temps"][0]}\n最高気温: {area["temps"][1]}'
+)
+                await m.channel.send(embeds=[weather_info_embed_title,weather_info_embed_weather,weather_info_embed_rainluck,weather_info_embed_temp])
 
-        if "<@985254515798327296>" in m.content:
+        if m.content == "<@985254515798327296>":
             async with m.channel.typing():
                 await asyncio.sleep(random.uniform(1,3))
             await m.channel.send("</help:1063776235156672632>でコマンドのヘルプを表示できるよ")
@@ -436,7 +471,7 @@ class MiniMet(discord.Client):
             elif m.content == "おいに！":
                 await m.channel.send("<@776726560929480707> おい！！！")
             else:
-                m.channel.send("<@776726560929480707> おーい")
+                await m.channel.send("<@776726560929480707> おーい")
 
         if re.fullmatch("(おは|oha)(よう|よ|you|yo)?(なす|ナス|茄子|nasu)?(！{1,10}|!{1,10}|～{1,10}|~{1,10})?",m.content):
             printe(f"Received morning message")
@@ -447,7 +482,7 @@ class MiniMet(discord.Client):
             else:
                 await m.channel.send(random.choice(["おはよ～～","おはよう～","おはよう～～","おは"]))
 
-        if m.content.endswith("ｗ") or m.content.startswith("w"):
+        if m.content.endswith("ｗ") or m.content.endswith("w"):
             temp_rn = random.randrange(1,3)
             if temp_rn == 1:
                 async with m.channel.typing():
@@ -503,7 +538,7 @@ class MiniMet(discord.Client):
         invite_create_embed.add_field(name="Max uses",value=str(invite.max_uses))
         invite_create_embed.add_field(name="Max age",value=seconds_to_string(invite.max_age,"%w週間, %d日 %h時間%m分 %s秒"))
         invite_create_embed.add_field(name="Temporary member",value=str(invite.temporary))
-        await client.get_channel(LOG_CHANNEL_IDS["server_events"]).send(embed=invite_create_embed)
+        await client.get_channel(CHANNEL_IDS["server_events"]).send(embed=invite_create_embed)
 
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         if user.bot:
@@ -511,7 +546,7 @@ class MiniMet(discord.Client):
         printe(f"Reaction added by {user}",label="Event")
         reaction_add_embed = discord.Embed(title="Reaction add event",url=reaction.message.jump_url,description=f"{reaction.emoji} by<@{user.id}> total: **{reaction.count}**")
         reaction_add_embed.set_author(name=user,icon_url=user.display_avatar.url)
-        await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=reaction_add_embed)
+        await client.get_channel(CHANNEL_IDS["message_events"]).send(embed=reaction_add_embed)
 
         if reaction.count == 5 and reaction.message.guild.id == 842320961033601044:
             printe("Received over 5 reactioned message")
@@ -524,7 +559,31 @@ class MiniMet(discord.Client):
         if (reaction.message.id == latest_temp_datas["actioned_brocked_word_message_id"]) and (reaction.emoji == "❗"):
             brocked_word_description_embed = discord.Embed(title="メッセージが記録されています",description=f"該当のメッセージには禁止されたワードが含まれている可能性があるため記録されています",color=0x4444ff)
             await reaction.message.channel.send(embed=brocked_word_description_embed)
-            latest_temp_datas["actioned_brocked_word_message_id"] = None
+            latest_temp_datas["actioned_brocked_word_message_id"] = 0
+        if (reaction.message.id == latest_temp_datas["openable_discord_message_link"]) and (reaction.emoji == "🔗"):
+            printe("Opening message link in reaction message")
+            jump_url = re.match("https://(canary\.)?discord\.com/channels/\d*/\d*/\d*/?",reaction.message.content).group()
+            message_status_ids = jump_url.lstrip("https://discord.com/channels/").split("/")
+            message_status_ids = jump_url.lstrip("https://canary.discord.com/channels/").split("/")
+            request_url = f"https://discord.com/api/v10/channels/{message_status_ids[1]}/messages/{message_status_ids[2]}"
+            result_message_json = json.loads(requests.get(url=request_url,headers=HTTP_AUTHORIZATION_HEADERS).text)
+            try:
+                message_link_opener_reactions = "リアクション: "
+                for reaction_of_message_json in result_message_json["reactions"]:
+                    if reaction_of_message_json["emoji"]["id"] is None:
+                        message_link_opener_reactions += f'{reaction_of_message_json["emoji"]["name"]}×{reaction_of_message_json["count"]}, '
+                    else:
+                        message_link_opener_reactions += f'<:{reaction_of_message_json["emoji"]["name"]}:{reaction_of_message_json["emoji"]["id"]}>×{reaction_of_message_json["count"]}'
+            except KeyError:
+                printe("it's message link is not reactioned")
+            message_link_opener_embed = discord.Embed(description=f'{result_message_json["content"]}\n\n{message_link_opener_reactions}')
+            message_link_opener_embed.set_author(
+                icon_url=f'https://cdn.discordapp.com/avatars/{result_message_json["author"]["id"]}/{result_message_json["author"]["avatar"]}.webp?size=100',
+                name=f'{result_message_json["author"]["username"]}#{result_message_json["author"]["discriminator"]}'
+)
+            message_link_opener_embed.set_footer(text=f'at: {dt.now().strftime(strftime_arg)}')
+            await reaction.message.channel.send(embed=message_link_opener_embed,delete_after=60.0)
+            latest_temp_datas["openable_discord_message_link"] = 0
 
     async def on_reaction_remove(self, reaction: discord.Reaction, user: discord.User):
         if user.bot:
@@ -532,7 +591,7 @@ class MiniMet(discord.Client):
         printe(f"Reaction removed by {user}",label="Event")
         reaction_add_embed = discord.Embed(title="Reaction remove event",url=reaction.message.jump_url,description=f"{reaction.emoji} by<@{user.id}> total: **{reaction.count}**")
         reaction_add_embed.set_author(name=user,icon_url=user.display_avatar.url)
-        await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=reaction_add_embed)
+        await client.get_channel(CHANNEL_IDS["message_events"]).send(embed=reaction_add_embed)
 
     async def on_app_command_completion(self, interaction: discord.Interaction, command: typing.Union[app_commands.Command,app_commands.ContextMenu]):
         printe(f"{interaction.user} issued command: /{command.qualified_name}")
@@ -542,7 +601,7 @@ class MiniMet(discord.Client):
             app_command_completion_embed = discord.Embed(title=f"{interaction.user.display_name} issued ContextMenu: /{command.qualified_name}",description=f"**Type: **\n{command.type}")
         app_command_completion_embed.set_author(name=interaction.user,icon_url=interaction.user.display_avatar.url)
         app_command_completion_embed.set_footer(text=f"at: {dt.now().strftime(strftime_arg)}, uid: {interaction.user.id}")
-        await client.get_channel(LOG_CHANNEL_IDS["message_events"]).send(embed=app_command_completion_embed)
+        await client.get_channel(CHANNEL_IDS["message_events"]).send(embed=app_command_completion_embed)
 
     async def on_member_join(self, member: discord.Member):
         printe(f"Member joined: {member}, to {member.guild.name}",label="Event")
@@ -613,11 +672,45 @@ async def add_todo(interaction: discord.Interaction, label: str, title: str, des
     embed.set_footer(text=f"uid: {interaction.user.id}, at: {dt.now().strftime(strftime_arg)}")
     if label == "バグ" or label == "改善案" or label == "新機能":
         match label:
-            case "バグ": embed.color = 0xff0000
-            case "改善案": embed.color = 0x00ff00
-            case "新機能": embed.color = 0x0000ff
+                case "バグ": embed.color = 0xff0000
+                case "改善案": embed.color = 0x00ff00
+                case "新機能": embed.color = 0x0000ff
     await client.get_channel(1072469158530396190).send(embed=embed)
     await interaction.response.send_message(content=f"**{title}**をTODOに追加しました",ephemeral=True)
+
+@tree.command(name="report",description="違反やトラブルなどを報告する")
+@app_commands.describe(
+    title="タイトル - 報告の内容を簡潔に伝えてください",
+    description="説明 - 報告の詳細(マークダウンを使用できます、改行には<br>を使用します)",
+    user="ユーザー - 報告対象のユーザー(discordユーザーがわかる場合)",
+    user_name="ユーザー名 - 報告対象のユーザーの名前(discordユーザーが分からない場合、代わりに使用されます)",
+    attachment="参考ファイル - 報告する内容をより分かりやすく伝えるための添付ファイル",
+)
+async def report(
+    interaction: discord.Interaction,
+    title: str,
+    description: str,
+    user: typing.Optional[discord.User] = None,
+    user_name: typing.Optional[str] = None,
+    attachment: typing.Optional[discord.Attachment] = None
+):
+    description = description.replace("<br>","\n")
+    embed = discord.Embed(title=title,description=description)
+    if user is not None:
+        embed.set_author(icon_url=user.display_avatar.url,name=user)
+    if user_name is not None:
+        embed.set_author(name=user_name)
+    if attachment is not None:
+        file = await attachment.to_file()
+        await client.get_channel(CHANNEL_IDS["report_datas"]).send(embed=embed,file=file)
+    else:
+        await client.get_channel(CHANNEL_IDS["report_datas"]).send(embed=embed)
+    await interaction.response.send_message("正常に送信されました、報告ありがとうございます",ephemeral=True)
+
+# TODO: グロチャ機能用のコマンドを作る
+@tree.command(name="global-chat",description="グローバルチャットのコマンド")
+async def global_chat(interaction: discord.Interaction):
+    return
 
 @tree.command(name="dayone",description="こめたんに共感してもらう")
 async def dayone(interaction: discord.Interaction):
@@ -741,6 +834,21 @@ async def feedback(interaction: discord.Interaction):
 
 # TODO: 埋め込み作成コマンドを実装する
 class GenerateEmbed(discord.ui.Modal, title="埋め込み作成"):
+    def __init__(self, *args, title: str = ..., timeout: typing.Optional[float] = None, custom_id: str = ...) -> None:
+        super().__init__(title=title, timeout=timeout, custom_id=custom_id)
+        if args[0] is not None:
+            self.color = args[0]
+        if args[1] is not None:
+            self.url = args[1]
+        if args[2] is not None:
+            self.author_icon = args[2]
+        if args[3] is not None:
+            self.author_name = args[3]
+        if args[4] is not None:
+            self.image = args[4]
+        if args[5] is not None:
+            self.thumbnail = args[5]
+
     title = discord.ui.TextInput(
         label="title",
         style=discord.TextStyle.short,
@@ -753,7 +861,7 @@ class GenerateEmbed(discord.ui.Modal, title="埋め込み作成"):
         style=discord.TextStyle.long,
         max_length=4096,
         required=False,
-        placeholder="説明欄を入力してください"
+        placeholder="説明欄を入力してください(マークダウンも使用できます)"
     )
     fields = discord.ui.TextInput(
         label="fields",
@@ -761,21 +869,48 @@ class GenerateEmbed(discord.ui.Modal, title="埋め込み作成"):
         required=False,
         placeholder='JSON形式で入力します。例: [{"name":"好きな食べ物","value":"カステラ"},{"name":"好きな動物","value":"かに"}]'
     )
+    footer = discord.ui.TextInput(
+        label="footer",
+        style=discord.TextStyle.short,
+        max_length=2048,
+        required=False,
+        placeholder="フッターのテキストを入力してください"
+    )
 
     async def on_submit(self, interaction: discord.Interaction):
+        embed = discord.Embed(title=self.title.value,description=self.description.value,color=self.color,url=self.url)
+        if self.author_icon is not None and self.author_name is not None:
+            embed.set_author(icon_url=self.author_icon,name=self.author_name)
+        if self.image is not None:
+            embed.set_image(url=self.image.url)
+        if self.thumbnail is not None:
+            embed.set_thumbnail(url=self.thumbnail.url)
+        if self.footer is not None:
+            embed.set_footer(text=self.footer.value)
+        if self.fields is not None:
+            try:
+                self.fields = json.loads(self.fields)
+                for field in self.fields:
+                    embed.add_field(name=field["name"],value=field["value"])
+            except Exception as e:
+                await interaction.response.send_message("fields処理中にエラーが発生しました",ephemeral=True)
+                await client.get_channel(CHANNEL_IDS["bot_log"]).send(f"GenerateEmbed.Fields: {e}")
+                return
 
-        await interaction.response.send_message("on_submit", ephemeral=True)
+        await interaction.channel.send(embed=embed)
+        await interaction.response.send_message("embedを生成しました", ephemeral=True)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         embed = discord.Embed(title="generate_embed内部エラー",description=error,color=0xff0000)
-        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(embed=embed)
+        await client.get_channel(CHANNEL_IDS["bot_log"]).send(embed=embed)
         await interaction.response.send_message(f"内部エラーにより処理に失敗しました", ephemeral=True)
 
 @tree.command(name="generate-embed",description="埋め込みメッセージを送信します")
 @app_commands.describe(
     color="16進数のRGBカラーコードでラインの色を指定します",
     url="title要素のリンク先",
-    author="author属性のアイコン画像",
+    author_icon="author属性のアイコン画像",
+    author_name="author属性の名前",
     image="image属性の画像",
     thumbnail="thumbnail要素の画像"
 )
@@ -783,7 +918,8 @@ async def generate_embed(
     interaction: discord.Interaction,
     color: typing.Optional[str] = None,
     url: typing.Optional[str] = None,
-    author: typing.Optional[discord.Attachment] = None,
+    author_icon: typing.Optional[discord.Attachment] = None,
+    author_name: typing.Optional[str] = None,
     image: typing.Optional[discord.Attachment] = None,
     thumbnail: typing.Optional[discord.Attachment] = None
 ):
@@ -800,8 +936,16 @@ async def generate_embed(
         await interaction.response.send_message("urlの指定が正しくありません",ephemeral=True)
         return
 
-    await interaction.response.send_modal(GenerateEmbed())
+    await interaction.response.send_modal(GenerateEmbed(color,url,author_icon,author_name,image,thumbnail,title="埋め込み作成"))
 
+@tree.command(name="echo",description="引数で受け取った値をそのまま返します")
+@app_commands.describe(
+    content="値"
+)
+async def echo(interaction: discord.Interaction, content: str):
+    await interaction.channel.send(content=content)
+    await interaction.response.send_message("sent",ephemeral=True)
+    return
 
 @tree.context_menu(name="だよね！！！")
 async def dayone_msg(interaction: discord.Interaction, message: discord.Message):
@@ -816,32 +960,8 @@ async def dayone_msg(interaction: discord.Interaction, message: discord.Message)
     last_actioned_times["dayone_msg"] = dt.now()
     await interaction.response.send_message(content="\:D",ephemeral=True)
 
-class ChangeExt(discord.ui.Modal, title="拡張子変更"):
-    title = discord.ui.TextInput(
-        label="拡張子",
-        style=discord.TextStyle.short,
-        required=True,
-        placeholder="変更後の拡張子を指定してください"
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-
-        await interaction.response.send_message("on_submit", ephemeral=True)
-
-    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        embed = discord.Embed(title="generate_embed内部エラー",description=error,color=0xff0000)
-        await client.get_channel(LOG_CHANNEL_IDS["bot_log"]).send(embed=embed)
-        await interaction.response.send_message(f"内部エラーにより処理に失敗しました", ephemeral=True)
 @tree.context_menu(name="ぎふぃふぃけーと")
 async def gifificate(interaction: discord.Interaction, message: discord.Message):
-#    if prosessing_change_ext == True:
-#        interaction.response.send_message("別の処理を行っています、数秒後にもう一度お試しください",ephemeral=True)
-#        return
-#    else:
-#        global change_ext_message
-#        global prosessing_change_ext
-#        change_ext_message = message
-#        prosessing_change_ext = True
     try:
         printe(f"Gififing {message.attachments[0].filename} and otherfiles...")
     except IndexError:
@@ -849,10 +969,60 @@ async def gifificate(interaction: discord.Interaction, message: discord.Message)
         return
     result_files = []
     for attachment in message.attachments:
-        path = os.PathLike
         attachment.save(f"storage/images/gifificated/{message.id}-by-{message.author.id}.png")
         result_file = await attachment.to_file(filename=f"gifificated-{attachment.filename}.gif")
         result_files.append(result_file)
     await interaction.response.send_message(content="ぎっふぃっふぃ...",files=result_files)
+
+class ReportThisMessage(discord.ui.Modal, title="匿名でメッセージを報告"):
+    name = discord.ui.TextInput(
+        label="表示名",
+        style=discord.TextStyle.long,
+        max_length=128,
+        required=True,
+        placeholder="識別のための表示名を入力してください（出来るだけ１種類の物を繰り返し使うようにしてください）"
+    )
+    report_title = discord.ui.TextInput(
+        label="タイトル",
+        style=discord.TextStyle.long,
+        max_length=256,
+        required=True,
+        placeholder="報告の内容を簡潔にタイトルに表してください"
+    )
+    content = discord.ui.TextInput(
+        label="内容",
+        style=discord.TextStyle.long,
+        max_length=4000,
+        required=True,
+        placeholder="報告の内容に対して詳細に教えてください（どのユーザーが、どういった違反をしたのかなど）"
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        embed = discord.Embed(title=f"詳細: {self.report_title.value}",description=self.content.value)
+        embed.set_author(icon_url=interaction.guild.icon.url,name=self.name.value)
+        embed.set_footer(text=f"AT: {dt.now().strftime(strftime_arg)}, InteraUID: {interaction.user.id}")
+        await client.get_channel(CHANNEL_IDS["report_datas"]).send(embed=embed)
+        await interaction.response.send_message("正常に送信されました、報告ありがとうございます", ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title="report_this_message内部エラー",description=error,color=0xff0000)
+        await client.get_channel(CHANNEL_IDS["bot_log"]).send(embed=embed)
+        await interaction.response.send_message("内部エラーにより処理に失敗しました", ephemeral=True)
+
+@tree.context_menu(name="報告する")
+async def report_this_messsage(interaction: discord.Interaction, message: discord.Message):
+    embed = discord.Embed(title="メッセージが報告されました", description=f"メッセージ: {message.content}\n\n**しばらくした後に詳細が送られます**", url=message.jump_url)
+    embed.set_author(icon_url=message.author.display_avatar.url,name=message.author)
+    embed.set_footer(text=f"AT: {dt.now().strftime(strftime_arg)}, InterUID: {interaction.user.id}, MID: {message.id}")
+    await client.get_channel(CHANNEL_IDS["report_datas"]).send(embed=embed)
+    await interaction.response.send_modal(ReportThisMessage())
+
+@tree.context_menu(name="翻訳する")
+async def translate_this(interaction: discord.Interaction, message: discord.Message):
+    translator = Translator()
+    translated_content = translator.translate(message.content,dest="ja").text
+    embed = discord.Embed(title="日本語翻訳",description=translated_content)
+    embed.set_author(name=message.author,icon_url=message.author.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
 
 client.run(token=BOT_TOKEN)
