@@ -22,4 +22,5 @@ def seconds_to_string(seconds: int = 0, outstr: str = "%wweeks, %ddays %h:%m.%s"
     result = outstr.replace("%w",str(weeks)).replace("%d",str(days)).replace("%h",str(hours)).replace("%m",str(minutes)).replace("%s",str(seconds))
     return result
     
+    # EXAMPLE
     print(seconds_to_string(1000000))
