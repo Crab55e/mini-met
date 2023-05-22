@@ -30,5 +30,5 @@ def printe(content,mode = None,label = None):
         print(f"{color}[MM.{mode_text}] {content}\033[0m")
         return
     print(f"\033[092m[MM] {content}\033[0m")
-
+# EXAMPLE
 printe("Loading...")
