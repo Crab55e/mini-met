@@ -539,8 +539,7 @@ class Bot(discord.Client):
 
     async def on_raw_thread_member_remove(
             self,
-            payload # Payload data is not supported for this event | このイベントではpayloadのclassがありません
-            # TODO: payload classがリリースされたらアノテーションを追加する
+            payload: discord.RawThreadMembersUpdate
 ):
         return
 
