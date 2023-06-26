@@ -1,0 +1,1 @@
+tellraw @a {"text":"[添付画像]","hoverEvent": {"action": "show_text","value": ""}}

@@ -59,6 +59,7 @@ from googletrans import Translator
 from multiprocessing import Process
 from mcclient import SLPClient
 from mcrcon import MCRcon
+from io import BytesIO
 
 
 
@@ -101,15 +102,20 @@ admin_ids = [
 
 
 
-# constant
-BOT_TOKEN = "ﾄｹﾝｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯ"
+# constants
+with open("env.json","r") as f:
+    ENV = json.loads(f.read())
+BOT_TOKEN = ENV["bot_token"]
 METS_SERVER_ID = 842320961033601044
 MINI_MET_ID = 985254515798327296
 CRAB55E_DISCORD_USER_ID = 776726560929480707
 THEME_COLOR_HEX = 0x3da45d
+DISSOKU_COOLDOWN_SECONDS = 3600
+BUMP_COOLDOWN_SECONDS = 7200
 STRFTIME_ARG = "%Y-%m-%d %H:%M.%S"
 TIMESTAMP_STRFTIME_ARG = "%Y-%m-%d %H:%M:%S.%f"
 MINI_MET_AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/2.png"
+EXTERNAL_RCON_PATH = "C:/Program Files/mcrcon-0.0.5-bin-windows/mcrcon.exe"
 AUTH_IMAGE_FONT = ImageFont.truetype("C:/Windows/Fonts/NotoSerifJP-ExtraLight.otf", 100)
 AUTH_IMAGE_RAW = Image.open("storage/images/auth/raw.png")
 NOT_MENTIONABLE = discord.AllowedMentions.none()
@@ -122,9 +128,10 @@ CHANNEL_IDS = {
     "auto_moderations": 1074249523423105035,
     "voice_events": 1074249525117603860,
     "report_datas": 1017828972240838745,
-    "shiritori_channel":999269935370997761,
-    "self_introduction":949994602427994113,
-    "rinnable_channel":1074045647390507149
+    "shiritori_channel": 999269935370997761,
+    "self_introduction": 949994602427994113,
+    "rinnable_channel": 1074045647390507149,
+    "member_welcome_channel": 842320961033601046
 }
 HTTP_AUTHORIZATION_HEADERS = {"Authorization":f"Bot {BOT_TOKEN}"}
 SERVER_ADDRESSES = {
@@ -141,7 +148,7 @@ RCON_ACCESS = {
     "port": "25575",
     "local_ip": "localhost",
     "global_ip": "join.mets-svr.com",
-    "password": "5098d9154eadbc0c37e2f5674490f08186f0c8973d8cba6711a731081ae552c3"
+    "password": "5117585993e259caae453676e6711cf81a2ba11743441f7e51a9abe1447eb20c"
 }
 
 # functions
@@ -193,6 +200,43 @@ def zorome_check(number: int, include_single_digit: Optional[bool] = False) -> b
     else:
         return len(set(int(c) for c in str(number))) == 1
     return False
+
+def image_to_jsoncomponent(image: Image.Image, size: tuple = (23, 23), char: str = "█") -> str:
+    image.thumbnail(size, Image.LANCZOS)
+    width, height = image.size
+    pixel_data = []
+
+    for y in range(height):
+        for x in range(width):
+            r, g, b = image.getpixel((x, y))[:3]
+            hex_code = "{" + f'"text":"{char}","color":"#{r:02x}{g:02x}{b:02x}"' + "}"
+            pixel_data.append(hex_code)
+
+    colored_characters = ""
+    for i in range(0, len(pixel_data), width):
+        row = pixel_data[i:min(i + width, len(pixel_data))]
+        row_text = ",".join(row)
+        colored_characters += row_text + ",\"\\n\","
+    return "[" + colored_characters[:-6] + "]"
+
+def get_timestamp(time: dt | int | float, style_sign: str = "f") -> str:
+    VALID_STYLE_SIGN_VALUES = ["t","T","d","D","f","F","R"]
+    if len(style_sign) != 1:
+        raise ValueError("関数get_timestampの引数、\"style_sign\"に長いやつが渡されました")
+    for valid_value in VALID_STYLE_SIGN_VALUES:
+
+        if style_sign != valid_value:
+            raise ValueError("関数get_timestampの引数、\"style_sign\"に有効じゃないやつが渡されました")
+
+    if type(time) == dt:
+        return f"<t:{round(time.timestamp())}:{style_sign}>"
+    elif type(time) == int:
+        return f"<t:{time}:{style_sign}>"
+    elif type(time) == float:
+        return f"<t:{round(time)}:{style_sign}>"
+    else:
+        raise TypeError("関数get_timestampの引数、\"time\"に有効じゃない型の値が渡されました")
+
 
 class RolePanel(discord.ui.View):
     def __init__(self):
@@ -410,10 +454,45 @@ class MiniMet(discord.Client):
 
         if re.match(r"\<\@\d*\>",m.content) and m.guild.id == METS_SERVER_ID:
             printe("Received mention message",label="MentionLog")
-            mention_embed = discord.Embed(title="mention message log", url=m.jump_url, description=" ", color=0xffd152)
-            mention_embed.add_field(name="content: ", value=f"{m.content}", inline=False)
+            mention_embed = discord.Embed(
+                title="Mention message log",
+                url=m.jump_url,
+                description=m.content
+            )
+            mention_embed.set_author(name=m.author, icon_url=m.author.display_avatar.url)
+            mention_embed.set_footer(text=f"at: {dt.now().strftime(STRFTIME_ARG)}, uid: {m.author.id}, mid: {m.id}")
             await client.get_channel(CHANNEL_IDS["message_events"]).send(embed=mention_embed)
-        
+
+        if m.interaction is not None:
+            printe("Interaction in message.")
+            if m.interaction.name == "dissoku up" and m.channel.id == 1074249472617480192: # bot commands channel
+                timestamp = get_timestamp(dt.now().timestamp() + DISSOKU_COOLDOWN_SECONDS, "R")
+                dissoku_up_notify = discord.Embed(
+                    title="up通知",
+                    description=f"upを検知しました、{timestamp}にもう一度通知します"
+                )
+                await m.channel.send(embed=dissoku_up_notify)
+                await asyncio.sleep(DISSOKU_COOLDOWN_SECONDS)
+                dissoku_up_notify = discord.Embed(
+                    title="up通知",
+                    description="**up**のクールダウンが終わりました\n</dissoku up:828002256690610256>から**up**が出来ます"
+                )
+                await m.channel.send("<@&1074249438928838707>",embed=dissoku_up_notify)
+
+            if m.interaction.name == "bump" and m.channel.id == 1074249472617480192: # bot commands channel
+                timestamp = get_timestamp(dt.now().timestamp() + BUMP_COOLDOWN_SECONDS, "R")
+                bump_notify = discord.Embed(
+                    title="bump通知",
+                    description=f"bumpを検知しました、{timestamp}にもう一度通知します"
+                )
+                await m.channel.send(embed=bump_notify)
+                await asyncio.sleep(BUMP_COOLDOWN_SECONDS)
+                bump_notify = discord.Embed(
+                    title="bump通知",
+                    description="**bump**のクールダウンが終わりました\n</bump:947088344167366698>から**bump**出来ます"
+                )
+                await m.channel.send("<@&1074249438928838707>",embed=bump_notify)
+
         if re.match(r"https?:\/\/.*chonmage\.png.*\/?",m.content):
             await m.delete()
         if "<:crab:1108300671654043648>" in m.content or "<:__:1108301886471295069>" in m.content or "<:rewsnghbyeaiumghuipaemhgaeupimhg:1108302306258206750>" in m.content or"<a:rewsnghbyeaiumghugraehgeamhuieag:1108303848621211718>" in m.content or "<:kanininininiinniiinniinn:1108302015785873418>" in m.content:
@@ -423,6 +502,29 @@ class MiniMet(discord.Client):
             printe("Messsage link in message content")
             latest_temp_datas["openable_discord_message_link"] = m.id
             await m.add_reaction("🔗")
+
+        if m.channel.id == 1074249466024034334: # DiscordSRV CHannel
+            if m.attachments != []:
+                for a in m.attachments:
+                    if a.filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif")):
+                        mcify_image = Image.open(BytesIO(await a.read()))
+                        mcify_jsonized = '{"text":"[添付画像]","color":"#22ffff","hoverEvet":{"action":"show_text","value":<ImageComponent>}}'.replace(
+                            "<ImageComponent>",
+                            image_to_jsoncomponent(mcify_image)
+                        )
+                        # NOTE: 改行したあとreplaceで改行を治してます、見やすいんで
+                        mcify_rcon_command = f"""
+{EXTERNAL_RCON_PATH}
+ -H {RCON_ACCESS['local_ip']}
+ -P {RCON_ACCESS['port']}
+ -p {RCON_ACCESS['password']}
+ \"tellraw @a {mcify_jsonized}\"
+"""[1:-1].replace("\n","")
+                        process = subprocess.Popen(mcify_rcon_command,bufsize=-1)
+                        process.wait()
+                        await m.add_reaction("📸")
+            elif re.fullmatch(r"https?:\/\/.*\.discord\.com\/.*\.(png|jpg|jpeg|gif)",m.content):
+                "リンクの画像だった場合の処理"
 
         if "ikafジェネリック免責事項" in m.content:
             latest_temp_datas["ikaf_generic_disclaimer"] = m.id
@@ -650,11 +752,20 @@ class MiniMet(discord.Client):
                 tts=dm_channel_use_tts
             )
             return
-            
+
+        if m.channel.id == 1111569746815615056 and m.attachments != []:
+            await m.attachments[0].save("C:/Users/crab_/OneDrive/デスクトップ/saved-bgimage.png")
+            printe(f"activated bgimage changer, saved image: {m.attachments[0].filename}")
+            ctypes.windll.user32.SystemParametersInfoW(20, 0, "C:/Users/crab_/OneDrive/デスクトップ/saved-bgimage.png" , 0)
+            await m.add_reaction("✅")
 
     ### 生きるこめたん
-        if re.match(r"(子met|小met)",m.content):
+        if re.match(r"((子|小)met|こめたん)",m.content):
             printe(f"Received message in MyName :D")
+            kometan_messages = ["こめたん" in msg.content async for msg in m.channel.hisotry(limit=10)]
+            if any(kometan_messages):
+                printe(f"kometans is already sent by others: {kometan_messages}")
+                return
             if m.author.top_role.id == 844359217984700446 or m.author.top_role.id == 1020521550945996900:
                 await m.channel.send("お呼びでしょうか？")
             else:
@@ -669,14 +780,14 @@ class MiniMet(discord.Client):
             async with m.channel.typing():
                 await asyncio.sleep(random.uniform(1,2))
             await m.channel.send("にんじんだぞ！！！！<@796350579286867988>")
-        
+
         if re.fullmatch(r"(?i)(hey|おい)(かわ|kawa)(さん|san)?(!|！|~|～){1,10}?",m.content):
-            if random.randrange(1,50) == 1:
                 printe("Calling to Kawasan")
+                return
                 async with m.channel.typing():
                     await asyncio.sleep(random.uniform(1,2))
-                choiced_kawasan_mention = random.choice(["<@964438295440396320>","<@628513445964414997>"]) 
-                await m.channel.send(f"{choiced_kawasan_mention} HEY")
+                # choiced_kawasan_mention = random.choice(["<@964438295440396320>","<@628513445964414997>"])
+                await m.channel.send(f"<@964438295440396320> HEY")
         if re.fullmatch(r"(?i)(おい|hey)(かえ|加絵|カエ)(さん)?(!|！|~|～){1,10}?",m.content):
             printe("Calling to Kae")
             async with m.channel.typing():
@@ -722,6 +833,9 @@ class MiniMet(discord.Client):
 
         if m.content == "がんば":
             await asyncio.sleep(1.5)
+            async for history_message in m.channel.history(limit=10):
+                if history_message.content == "がんば":
+                    return
             async with m.channel.typing():
                 await asyncio.sleep(random.uniform(1,2))
             await m.channel.send("がんば")
@@ -736,14 +850,17 @@ class MiniMet(discord.Client):
                     await m.reply(content="なす？\nhttps://cdn.discordapp.com/attachments/1014533269183803462/1107601002804293722/yonda.gif",mention_author=False)
                 else:
                     await m.reply("なす？\nhttps://media.discordapp.net/attachments/1055151855950372874/1055756068728361010/image.gif",mention_author=False)
-        
-        if re.fullmatch(r"(グー|チョキ|パー)(!|~|！|～)?",m.content):
+
+        if re.fullmatch(r"(グー|チョキ|パー|ぐー|ちょき|ぱー)(!|~|！|～)?",m.content):
             async with m.channel.typing():
                 await asyncio.sleep(1)
             await m.channel.send(f'{random.choice(["グー","チョキ","パー"])}！！')
 
         if (m.channel.id == CHANNEL_IDS["shiritori_channel"] or m.channel.id == 1030093892273590345) and not m.author.bot: # juice shiritori channel
             printe("Detected shiritori",label="Shiritori")
+            if len(m.content) >= 50:
+                printe("is too long content",label="Shiritori")
+                return
             with open("storage/json/shiritori_database.json", "r",encoding="utf-8") as shiritori_file:
                 shiritori_data = json.loads(shiritori_file.read())
             if random.randrange(1,5) == 1:
@@ -769,7 +886,7 @@ class MiniMet(discord.Client):
                     shiritori_file.write(json.dumps(shiritori_data))
                 printe("Writed data.",label="Shiritori")
 
-        if m.channel.id == CHANNEL_IDS["rinnable_channel"] and random.randrange(1,100) == 1:
+        if m.channel.id == CHANNEL_IDS["rinnable_channel"] and random.randrange(1,75) == 1:
             async with m.channel.typing():
                 await asyncio.sleep(1)
             printe("Replying as Rinna")
@@ -779,28 +896,29 @@ class MiniMet(discord.Client):
                 "character":"rinna",
                 "firstPerson":"こめたん"
             }
-            
-            message_history = [message.content async for message in m.channel.history(limit=10)]
+
             rinna_request_body["rawInput"] = f"""
-B: {message_history[9]}
-B: {message_history[8]}
-B: {message_history[7]}
-B: {message_history[6]}
-B: {message_history[5]}
-B: {message_history[4]}
-B: {message_history[3]}
-B: {message_history[2]}
-B: {message_history[1]}
-B: {message_history[0]}
+B: {m.content}
 A:
 """[1:-1]
             rinna_request_header = {
                 "Content-Type": "application/json",
                 "Cache-Control": "no-cache",
-                "Ocp-Apim-Subscription-Key": "おしえてくないよ"
+                "Ocp-Apim-Subscription-Key": "f44cebfe73b4481784b75d7d7aadf670"
             }
             rinna_response = requests.post("https://api.rinna.co.jp/models/cce",headers=rinna_request_header, json=rinna_request_body)
-            await m.reply(json.loads(rinna_response.text)["answer"].replace("〈あなた〉",m.author.name),mention_author=False)
+            await m.reply(
+                json.loads(
+                    rinna_response.text
+                )["answer"].replace(
+                    "〈あなた〉",
+                    m.author.name
+                ).replace(
+                    "〈わたし〉",
+                    "こめたん"
+                ),
+                mention_author=False
+            )
 
 
     async def on_invite_create(self, invite: discord.Invite):
@@ -857,6 +975,7 @@ A:
             message_link_opener_embed.set_footer(text=f'at: {dt.now().strftime(STRFTIME_ARG)}')
             await reaction.message.channel.send(embed=message_link_opener_embed)
             latest_temp_datas["openable_discord_message_link"] = 0
+
         if (reaction.message.id == latest_temp_datas["ikaf_generic_disclaimer"]) and (reaction.emoji == "ℹ️"):
             ikaf_generic_disclaimer_embed = discord.Embed(
                 title="ikafジェネリック免責事項",
@@ -878,7 +997,10 @@ A:
 ※ 上の内容はすべて私の免責のためなので別に必ず読む必要はなかった(ha
 """[1:-1]
 )
-            ikaf_generic_disclaimer_embed.add_field(name="以下の内容は上記に記した事項を踏まえたうえで読んでください",value="という便利なやつ")
+            ikaf_generic_disclaimer_embed.add_field(
+                name="以下の内容は上記に記した事項を踏まえたうえで読んでください",
+                value="という便利なやつ"
+            )
             await reaction.message.channel.send(embed=ikaf_generic_disclaimer_embed)
             latest_temp_datas["ikaf_generic_disclaimer"] = 0
 
@@ -909,7 +1031,7 @@ A:
                 title=f"{interaction.user.display_name} issued Command: \"/{command.qualified_name}\"",
                 description=params_description
                 )
-        elif type(command) == app_commands.ContextMenu: 
+        elif type(command) == app_commands.ContextMenu:
             app_command_completion_embed = discord.Embed(
                 title=f"{interaction.user.display_name} issued ContextMenu: \"{command.qualified_name}\"",
                 description=f"**Type: **\n{command.type}"
@@ -945,7 +1067,6 @@ A:
                         icon_url=member.display_avatar.url
                     )
                 )
-        
         # Welcome Message
         if member.guild.id == METS_SERVER_ID:
             member_count = member.guild.member_count
@@ -953,9 +1074,9 @@ A:
                 if "7" in str(member_count):
                     description = f"Met\'s サーバーへようこそ、あなたは**記念すべき{member_count}人目**のメンバーです！ラッキーセブン！🥳🎉🎂"
                 elif "4" in str(member_count):
-                    description = f"Met\'s サーバーへようこそ、あなたは**{member_count}人目**のメンバーです！不吉！！"
+                    description = f"Met\'s サーバーへようこそ！！！"
                 elif "6" in str(member_count):
-                    description = f"Met\'s サーバーへようこそ、あなたは**{member_count}人目**のメンバーです！不吉！！"
+                    description = f"Met\'s サーバーへようこそ！！！"
                 else:
                     description = f"Met\'s サーバーへようこそ、あなたは**記念すべき{member_count}人目**のメンバーです！🥳"
             else:
@@ -1106,7 +1227,7 @@ async def status(interaction: discord.Interaction):
     status_embed.add_field(name="Java Edition - IP", value=f'`{SERVER_ADDRESSES["java"]["ip"]}`', inline=True)
     status_embed.add_field(name="Bedrock Edition - IP", value=f'`{SERVER_ADDRESSES["bedrock"]["ip"]}`', inline=True)
     status_embed.add_field(name="Bedrock Edition - Port", value=f'`{SERVER_ADDRESSES["bedrock"]["port"]}`', inline=True)
-    status_embed.add_field(name="CPU Usage",value=f"{cpu_usage}%", inline=True) 
+    status_embed.add_field(name="CPU Usage",value=f"{cpu_usage}%", inline=True)
     status_embed.add_field(name="Memory Usage",value=f"{memory_usage.percent}%", inline=True)
     status_embed.add_field(name="Game Server",value=f"{game_server_response['status']}", inline=True)
     status_embed.set_footer(text="ver:1.19.4, 情報更新: 2023/04/03")
@@ -1158,6 +1279,11 @@ async def submit(interaction: discord.Interaction, content_key: str):
     await interaction.response.send_message("res")
 tree.add_command(manage_promote_contents)
 
+global_books = app_commands.Group(name="books", description="本を読み、出版し、修正し、提供できます")
+@global_books.command(name="write", description="本を出版します")
+async def write(interaction: discord.Interaction):
+    await interaction.response.send_message("books.write.res")
+
 @tree.command(name="alert",description="ユーザーに警告を送信します")
 @app_commands.describe(
     content="警告内容",
@@ -1189,27 +1315,6 @@ async def alert(
     else:
         await to.send(embed=embed)
     await interaction.response.send_message("正常に送信されました↓",embed=embed,ephemeral=True)
-
-
-# FIXME: なんか、なんだadd-todoのコマンドが捜査してないから直す
-@tree.command(name="add-todo",description="開発者用-追加予定の要素をメモする")
-@app_commands.describe(
-    label="バグ、改善案、新機能",
-    title="タイトル",
-    description="説明"
-)
-@app_commands.guilds(METS_SERVER_ID)
-async def add_todo(interaction: discord.Interaction, label: str, title: str, description: str):
-    embed = discord.Embed(title=f"{label}: {title}",description=description)
-    embed.set_author(icon_url=interaction.user.display_avatar.url)
-    embed.set_footer(text=f"uid: {interaction.user.id}, at: {dt.now().strftime(STRFTIME_ARG)}")
-    if label == "バグ" or label == "改善案" or label == "新機能":
-        match label:
-                case "バグ": embed.color = 0xff0000
-                case "改善案": embed.color = 0x00ff00
-                case "新機能": embed.color = 0x0000ff
-    await client.get_channel(1072469158530396190).send(embed=embed)
-    await interaction.response.send_message(content=f"**{title}**をTODOに追加しました",ephemeral=True)
 
 class ExecuteExec(discord.ui.Modal, title="execute"):
     code = discord.ui.TextInput(
@@ -1357,7 +1462,7 @@ async def report(
 # TODO: グロチャ機能用のコマンドを作る
 @tree.command(name="global-chat",description="グローバルチャットのコマンド")
 async def global_chat(interaction: discord.Interaction):
-    return
+    await interaction.response.send_message("未実装ｪ\nの事みんなでいじってきてますよね")
 
 @tree.command(name="dayone",description="こめたんに共感してもらう")
 async def dayone(interaction: discord.Interaction):
@@ -1485,7 +1590,7 @@ async def feedback(interaction: discord.Interaction):
 class GenerateEmbed(discord.ui.Modal, title="埋め込み作成"):
     def __init__(
         self,
-        *,
+        *args,
         title: str = discord.utils.MISSING,
         timeout: Optional[float] = None,
         custom_id: str = discord.utils.MISSING,
@@ -1621,7 +1726,7 @@ async def encode(interaction: discord.Interaction, string: str, convertion_type:
         result = string.encode(convertion_type)
     else:
         result = string.decode(convertion_type)
-    
+
     if ephemeral == False:
         await interaction.response.send_message(f"`{result}`")
     else:
@@ -1744,20 +1849,21 @@ class TranslateMenu(discord.ui.View):
         self.value = None
         self.message = message
 
-    @discord.ui.button(label="宣伝文として登録", style=discord.ButtonStyle.green)
-    async def submit_promote_contents(self, interaction: discord.Interaction, button: discord.ui.Button):
-        with open("storage\json\promote_contents.json","r") as promote_contents_file:
-            promote_contents = json.loads(promote_contents_file.read())
-        
-        promote_contents["guilds"][f"{interaction.guild.id}"][f"{interaction.user.id}"]
+    @discord.ui.button(label="メッセージを公開/Show to others", style=discord.ButtonStyle.green)
+    async def open_message(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.message.reply(f"by **{interaction.user}**",embeds=interaction.message.embeds, mention_author=False)
+        await interaction.response.send_message("公開しました",ephemeral=True)
 
 @tree.context_menu(name="Translate/翻訳")
 async def translate_this(interaction: discord.Interaction, message: discord.Message):
     if not re.fullmatch(nasu_regex,message.content):
-        translated = Translator().translate(message.content,dest=str(interaction.locale))
-        embed = discord.Embed(title=f"Translated {translated.src}-to-{translated.dest}",description=translated.text)
+        translated = Translator().translate(
+            message.content,
+            dest=str(interaction.locale) if len(interaction.locale) == 2 else str(interaction.locale)[:2]
+        )
+        embed = discord.Embed(title=f"Translated {translated.src}-to-{translated.dest}",url=message.jump_url, description=translated.text)
         embed.set_author(name=message.author,icon_url=message.author.display_avatar.url)
-        await interaction.response.send_message(embed=embed,ephemeral=True)
+        await interaction.response.send_message(embed=embed,ephemeral=True,view=TranslateMenu(message))
     else:
         translated_content = message.content.replace(
             "🍆な🍆","あ").replace(
@@ -1829,7 +1935,7 @@ class ContextMenuOther(discord.ui.View):
     # async def submit_promote_contents(self, interaction: discord.Interaction, button: discord.ui.Button):
     #     with open("storage\json\promote_contents.json","r") as promote_contents_file:
     #         promote_contents = json.loads(promote_contents_file.read())
-        
+
     #     promote_contents["guilds"][f"{interaction.guild.id}"][f"{interaction.user.id}"]
 #     @discord.ui.button(label="かまってもらう", style=discord.ButtonStyle.green)
 #     async def rinna(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1860,7 +1966,7 @@ class ContextMenuOther(discord.ui.View):
 #         rinna_request_header = {
 #             "Content-Type": "application/json",
 #             "Cache-Control": "no-cache",
-#             "Ocp-Apim-Subscription-Key": "わあああ"
+#             "Ocp-Apim-Subscription-Key": "f44cebfe73b4481784b75d7d7aadf670"
 #         }
 #         rinna_response = requests.post("https://api.rinna.co.jp/models/cce",headers=rinna_request_header, json=rinna_request_body)
 #         await m.reply(json.loads(rinna_response.text)["answer"],mention_author=False)

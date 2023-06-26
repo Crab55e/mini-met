@@ -1,4 +1,4 @@
-def seconds_to_string(seconds: int = 0, outstr: str = "%wweeks, %ddays %h:%m.%s"):
+def seconds_to_string(seconds: int = 0, output_format: str = "%wweeks, %ddays %h:%m.%s"):
     weeks = 0
     days = 0
     hours = 0
@@ -19,7 +19,7 @@ def seconds_to_string(seconds: int = 0, outstr: str = "%wweeks, %ddays %h:%m.%s"
         while seconds >= 60:
             seconds = seconds - 60
             minutes = minutes + 1
-    result = outstr.replace("%w",str(weeks)).replace("%d",str(days)).replace("%h",str(hours)).replace("%m",str(minutes)).replace("%s",str(seconds))
+    result = output_format.replace("%w",str(weeks)).replace("%d",str(days)).replace("%h",str(hours)).replace("%m",str(minutes)).replace("%s",str(seconds))
     return result
     
 # EXAMPLE

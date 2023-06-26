@@ -13,7 +13,9 @@ print(console_prefix,"Libraries has been Imported!")
 # main variables
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
-bot_token = "ﾄｹﾝｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯｯ"
+with open("env.json","r") as f:
+    ENV = json.loads(f.read())
+bot_token = ENV["bot_token"]
 
 global_chat_data = open("storage/json/global_chat.json","r",encoding="utf-8")
 global_chat_data = json.load(global_chat_data)
@@ -26,7 +28,7 @@ try:
     @client.event
     async def on_ready():
         now = dt.now()
-        log_channel = client.get_channel(965269631050862622)
+        log_channel = client.get_channel(1074249516871602227)
         global all_guild
         all_guild = []
         for guild in global_chat_data["guilds"]:
@@ -39,7 +41,7 @@ try:
         print(console_prefix,"Global Chat Feature is READY!!!")
 
     @client.event
-    async def on_message(m):
+    async def on_message(m: discord.Message):
         global global_chat_data
         global all_guild
 
@@ -115,7 +117,10 @@ try:
                     gc_message_embed.set_author(name=f"{m.author.display_name} | {m.author.top_role.name}",icon_url=f"{m.author.avatar.url}")
                     if m.attachments:
                         gc_message_embed.set_image(url=f"{m.attachments[0].url}")
-                    gc_message_embed.add_field(name="info",value=f"ID: {m.author.id} | Server: {m.guild.name} | **[link]({m.jump_url})**")
+                    gc_message_embed.add_field(name="|",value=f"ID: {m.author.id} | Server: {m.guild.name} | **[link]({m.jump_url})**")
+                    if m.reference:
+                        reply_message = await m.channel.fetch_message(m.reference.message_id)
+                        gc_message_embed.set_footer(text=f"({reply_message.author.display_name}に返信)")
 
                     for a_guild_id_1 in global_chat_data["guilds"]:
                         if m.channel.id != global_chat_data["guilds"][a_guild_id_1]["gchat_channel"]:

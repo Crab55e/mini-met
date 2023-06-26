@@ -1,0 +1,12 @@
+[2023-03-20 21:31:28] [ERROR   ] discord.client: Ignoring exception in on_member_update
+Traceback (most recent call last):
+  File "C:\Users\crab_\AppData\Local\Programs\Python\Python311\Lib\site-packages\discord\client.py", line 409, in _run_event
+    await coro(*args, **kwargs)
+  File "C:\Users\crab_\OneDrive\デスクトップ\codes\python-codes\discord-bots\mini-mets\mini-met.py", line 672, in on_member_update
+    await after.edit(nick=edited_name)
+  File "C:\Users\crab_\AppData\Local\Programs\Python\Python311\Lib\site-packages\discord\member.py", line 880, in edit
+    data = await http.edit_member(guild_id, self.id, reason=reason, **payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\crab_\AppData\Local\Programs\Python\Python311\Lib\site-packages\discord\http.py", line 738, in request
+    raise Forbidden(response, data)
+discord.errors.Forbidden: 403 Forbidden (error code: 50013): Missing Permissions
